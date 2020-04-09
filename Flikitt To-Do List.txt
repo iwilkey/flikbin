@@ -1,0 +1,21 @@
+Flikitt To-Do List
+-----------------
+
+// Important \\
+
+- I need to find out why an eraser line is named Eraser 3 times
+
+- I need to make an eraser line live in the next frame (if one exists) And, somthing tells me I will have to do that right when I click that next page button.
+
+- I need to make it so the render queue is increase in such a way where the newest onion line is over the most recent eraser line on the next frame.
+
+// Not so important \\
+
+- Make a way back to the porject selection screen if you accidentally click "create"
+
+// Ideas \\
+
+- Colors
+- Brush size
+- Line Manipulation
+- Photos you can take each frame then draw on them

@@ -25,7 +25,7 @@ public class DrawingManager : MonoBehaviour
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
 		UserInterface = GameObject.Find("User Interface").GetComponent<UserInterface>();
-		colorName = "Black";
+		colorName = "White";
 		width = 0.07f;
 	}
 
@@ -97,7 +97,8 @@ public class DrawingManager : MonoBehaviour
 				break;
 
 			default:
-				color = Color.black;
+				color = Color.white;
+				colorName = "White";
 				break;
 		}
 	}

@@ -7,7 +7,11 @@ public class UserInterface : MonoBehaviour
 {
 	FlikittCore FlikittCore;
 	public bool canDraw;
+
+	//UI Vars
 	public Text frameCounter;
+	public Sprite cam, deletePic;
+	public Image captureButton;
 
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
@@ -19,6 +23,24 @@ public class UserInterface : MonoBehaviour
 		int projlength = FlikittCore.frames.Count;
 
 		frameCounter.text = cframe + " / " + projlength;
+
+		if(FlikittCore.getCurrentFrame().getHasPicture()){
+			foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+				if(obj.gameObject.name == "Camera Feed"){
+					obj.gameObject.SetActive(false);
+				}
+			}
+
+			captureButton.sprite = deletePic;
+		} else {
+			foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+				if(obj.gameObject.name == "Camera Feed"){
+					obj.gameObject.SetActive(true);
+				}
+			}
+
+			captureButton.sprite = cam;
+		}
 
 		//This is bad way to do this, find a way to meld them together...
 		if(Input.touchCount > 0){
@@ -57,6 +79,14 @@ public class UserInterface : MonoBehaviour
 							FlikittCore.LoadPage(cframe - 1);
 						}
 
+						break;
+
+					case "Capture Button":
+						if(FlikittCore.getCurrentFrame().getHasPicture()){
+							FlikittCore.getCurrentFrame().setHasPicture(false);
+						} else {
+							FlikittCore.getCurrentFrame().setHasPicture(true);
+						}
 						break;
 
 					default:

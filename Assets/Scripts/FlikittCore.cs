@@ -1,12 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Frame{
 
 	private string name;
-	private bool enabled;
+	private bool enabled, hasPicture;
 	public GameObject goSelf;
+	public Canvas canvasSelf;
+	public Image imageSelf;
 
 	public Frame(int _number){
 		name = "Frame " + _number;
@@ -15,6 +18,18 @@ public class Frame{
 		goSelf.name = name;
 		goSelf.gameObject.tag = "Frame";
 		goSelf.transform.parent = GameObject.Find("Project").transform;
+
+		goSelf.AddComponent<Canvas>();
+		canvasSelf = goSelf.GetComponent<Canvas>();
+		canvasSelf.renderMode = RenderMode.ScreenSpaceOverlay;
+		canvasSelf.sortingOrder = -1;
+
+		goSelf.AddComponent<Image>();
+		imageSelf = goSelf.GetComponent<Image>();
+
+
+		hasPicture = false;
+		enabled = true;
 	}
 
 	public void Enable(){
@@ -51,6 +66,14 @@ public class Frame{
 		return name;
 	}
 
+	public bool getHasPicture(){
+		return hasPicture;
+	}
+
+	public void setHasPicture(bool p){
+		hasPicture = p;
+	}
+
 	public bool isEnabled(){
 		return enabled;
 	}
@@ -77,5 +100,14 @@ public class FlikittCore : MonoBehaviour
 
 	public void LoadPage(int frame){
 		currentFrame = frame;
+	}
+
+	public Frame getCurrentFrame(){
+		for(int i = 0; i < frames.Count; i++){
+			if(frames[i].getName() == (string)("Frame " + currentFrame.ToString())){
+				return frames[i];
+			}
+		}
+		return null;
 	}
 }

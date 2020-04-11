@@ -46,7 +46,7 @@ public class DrawingManager : MonoBehaviour
 					activeLine = line.GetComponent<Line>();
 
 					int currentFrame = FlikittCore.currentFrame;
-					line.transform.parent = FlikittCore.frames[currentFrame - 1].goSelf.transform;
+					line.transform.parent = FlikittCore.frames[currentFrame - 1].getGOSelf().transform;
 				}
 			}
 		}

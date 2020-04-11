@@ -7,26 +7,26 @@ public class Frame{
 
 	private string name;
 	private bool enabled, hasPicture;
-	public GameObject goSelf;
-	public Canvas canvasSelf;
-	public Image imageSelf;
+	private GameObject goSelf;
+	private RawImage imageSelf;
 
 	public Frame(int _number){
 		name = "Frame " + _number;
 
-		goSelf = new GameObject();
-		goSelf.name = name;
+		goSelf = new GameObject(name, typeof(RectTransform));
 		goSelf.gameObject.tag = "Frame";
 		goSelf.transform.parent = GameObject.Find("Project").transform;
+		
+		RectTransform rT = goSelf.GetComponent<RectTransform>();
+		rT.SetAnchor(AnchorPresets.StretchAll);
+		rT.SetTop((int)((Screen.height-Screen.width) / 2));
+		rT.SetBottom((int)((Screen.height-Screen.width) / 2));
+		rT.SetLeft((int)((Screen.width-Screen.height) / 2));
+		rT.SetRight((int)((Screen.width-Screen.height) / 2));
+		rT.localEulerAngles = new Vector3(0,0,-90);
 
-		goSelf.AddComponent<Canvas>();
-		canvasSelf = goSelf.GetComponent<Canvas>();
-		canvasSelf.renderMode = RenderMode.ScreenSpaceOverlay;
-		canvasSelf.sortingOrder = -1;
-
-		goSelf.AddComponent<Image>();
-		imageSelf = goSelf.GetComponent<Image>();
-
+		goSelf.AddComponent<RawImage>();
+		imageSelf = goSelf.GetComponent<RawImage>();
 
 		hasPicture = false;
 		enabled = true;
@@ -58,25 +58,22 @@ public class Frame{
 		}
 	}
 
-	public void setName(int num){
-		name = "Frame " + num;
+	public void setName(int num) {name = "Frame " + num;}
+	public string getName() {return name;}
+	public bool getHasPicture(){return hasPicture;}
+	public void setHasPicture(bool p) {hasPicture = p;}
+	public void setPicture(Texture image) {imageSelf.texture = image;}
+	public bool isEnabled() {return enabled;}
+	public void setStatus(string status){
+		if(status == "On"){
+			Enable();
+		} else if (status == "Off"){
+			Disable();
+		} else {
+			return;
+		}
 	}
-
-	public string getName(){
-		return name;
-	}
-
-	public bool getHasPicture(){
-		return hasPicture;
-	}
-
-	public void setHasPicture(bool p){
-		hasPicture = p;
-	}
-
-	public bool isEnabled(){
-		return enabled;
-	}
+	public GameObject getGOSelf() {return goSelf;}
 }
 
 public class FlikittCore : MonoBehaviour
@@ -93,13 +90,31 @@ public class FlikittCore : MonoBehaviour
 	}
 
 	public void NewPage(){
+		DisableAll();
 		currentFrame++;
 		Frame frame = new Frame(currentFrame);
 		frames.Add(frame);
+		EnableActive(currentFrame);
 	}
 
 	public void LoadPage(int frame){
+		DisableAll();
 		currentFrame = frame;
+		EnableActive(currentFrame);
+	}
+
+	void DisableAll(){
+		for(int i = 0; i < frames.Count; i++){
+			frames[i].setStatus("Off");
+		}
+	}
+
+	void EnableActive(int currentFrame){
+		for(int i = 0; i < frames.Count; i++){
+			if(frames[i].getName() == "Frame " + currentFrame){
+				frames[i].setStatus("On");
+			}
+		}
 	}
 
 	public Frame getCurrentFrame(){

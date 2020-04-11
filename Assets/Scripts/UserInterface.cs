@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class UserInterface : MonoBehaviour
 {
 	FlikittCore FlikittCore;
+	CameraManager CameraManager;
 	public bool canDraw;
 
 	//UI Vars
@@ -15,6 +16,7 @@ public class UserInterface : MonoBehaviour
 
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
+		CameraManager = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
 	}
 
 	void Update(){
@@ -83,9 +85,9 @@ public class UserInterface : MonoBehaviour
 
 					case "Capture Button":
 						if(FlikittCore.getCurrentFrame().getHasPicture()){
-							FlikittCore.getCurrentFrame().setHasPicture(false);
+							CameraManager.DeleteCapture();
 						} else {
-							FlikittCore.getCurrentFrame().setHasPicture(true);
+							CameraManager.Capture();
 						}
 						break;
 

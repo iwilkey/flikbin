@@ -7,29 +7,6 @@ using UnityEngine.UI;
 using UnityEngine.Android;
 #endif
 
-public static class RectTransformExtensions
-{
-	public static void SetLeft(this RectTransform rt, float left)
-	{
-	 rt.offsetMin = new Vector2(left, rt.offsetMin.y);
-	}
-
-	public static void SetRight(this RectTransform rt, float right)
-	{
-	 rt.offsetMax = new Vector2(-right, rt.offsetMax.y);
-	}
-
-	public static void SetTop(this RectTransform rt, float top)
-	{
-	 rt.offsetMax = new Vector2(rt.offsetMax.x, -top);
-	}
-
-	public static void SetBottom(this RectTransform rt, float bottom)
-	{
-	 rt.offsetMin = new Vector2(rt.offsetMin.x, bottom);
-	}
-}
-
 public class CameraManager : MonoBehaviour
 {
 	public RawImage camRender;
@@ -73,5 +50,19 @@ public class CameraManager : MonoBehaviour
 		} else {
 			if(webTex.isPlaying) webTex.Stop();
 		}
+	}
+
+	public void Capture(){
+		webTex.Pause();
+		Texture2D picTex = new Texture2D(camRender.texture.width, camRender.texture.height, TextureFormat.ARGB32, false);
+		picTex.SetPixels(webTex.GetPixels());
+		picTex.Apply();
+		FlikittCore.getCurrentFrame().setHasPicture(true);
+		FlikittCore.getCurrentFrame().setPicture(picTex);
+	}
+
+	public void DeleteCapture(){
+		FlikittCore.getCurrentFrame().setPicture(null);
+		FlikittCore.getCurrentFrame().setHasPicture(false);
 	}
 }

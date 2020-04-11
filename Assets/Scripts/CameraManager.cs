@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,7 +12,6 @@ public class CameraManager : MonoBehaviour
 {
 	public RawImage camRender;
 	WebCamTexture webTex = null;
-
 	FlikittCore FlikittCore;
 
 	void Start(){
@@ -36,7 +36,7 @@ public class CameraManager : MonoBehaviour
 			camRender.rectTransform.SetLeft((int)((Screen.width-Screen.height) / 2));
 			camRender.rectTransform.SetRight((int)((Screen.width-Screen.height) / 2));
 			camRender.rectTransform.localEulerAngles = new Vector3(0,0,-90);
-
+ 	
 			if(webTex != null) webTex.Play();
 		}
 		#endif
@@ -45,10 +45,12 @@ public class CameraManager : MonoBehaviour
 	}
 
 	void Update(){
-		if(!FlikittCore.getCurrentFrame().getHasPicture()){
-			if(!webTex.isPlaying) webTex.Play();
-		} else {
-			if(webTex.isPlaying) webTex.Stop();
+		if(WebCamTexture.devices != null){
+			if(!FlikittCore.getCurrentFrame().getHasPicture()){
+				if(!webTex.isPlaying) webTex.Play();
+			} else {
+				if(webTex.isPlaying) webTex.Stop();
+			}
 		}
 	}
 

@@ -80,6 +80,8 @@ public class FlikittCore : MonoBehaviour
 {
 	public int currentFrame = 1;
 	public List<Frame> frames;
+	public bool isPlaying;
+	public float spf;
 
 	void Start(){
 		//Is for a new project...
@@ -87,6 +89,9 @@ public class FlikittCore : MonoBehaviour
 			frames = new List<Frame>();
 			NewPage();
 		}
+
+		isPlaying = false;
+		spf = 1.0f;
 	}
 
 	public void NewPage(){
@@ -118,11 +123,42 @@ public class FlikittCore : MonoBehaviour
 	}
 
 	public Frame getCurrentFrame(){
-		for(int i = 0; i < frames.Count; i++){
+		for(int i = 0; i <= frames.Count; i++){
 			if(frames[i].getName() == (string)("Frame " + currentFrame.ToString())){
 				return frames[i];
 			}
 		}
 		return null;
+	}
+
+	private IEnumerator coroutine;
+	public void StartPlay(){
+		if(frames.Count > 1){
+			LoadPage(1);
+			coroutine = Play();
+			StartCoroutine(coroutine);
+		} else {
+			return;
+		}
+	}
+
+	private IEnumerator Play(){
+		for (int i = 1; i <= frames.Count; i++){
+			DisableAll();
+			EnableActive(i);
+			currentFrame = i;
+
+			if(isPlaying){
+				yield return new WaitForSeconds(spf);
+			} else {
+				break;
+			}
+		}
+		if(isPlaying){
+			StartPlay();
+		} else {
+			LoadPage(1);
+			yield break;
+		}
 	}
 }

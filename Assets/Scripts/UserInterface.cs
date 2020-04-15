@@ -3,34 +3,95 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+public class ColorSwatch {
+	private string name;
+	private Image imageSelf;
+	private bool enabled;
+	private GameObject GOSelf;
+
+	public ColorSwatch(string _name, Image _imageSelf){
+		name = _name;
+		imageSelf = _imageSelf;
+		enabled = false;
+		GOSelf = GameObject.Find(name + "_Swatch");
+	}
+
+	public string getName() {return name;}
+	public bool isEnabled() {return enabled;}
+
+	public void enable(){
+		imageSelf.color = new Color(imageSelf.color.r, imageSelf.color.g, imageSelf.color.b, 1.0f);
+		GOSelf.GetComponent<Image>().color = imageSelf.color;
+		enabled = true;
+	}
+
+	public void disable(){
+		imageSelf.color = new Color(imageSelf.color.r, imageSelf.color.g, imageSelf.color.b, 0.4f);
+		GOSelf.GetComponent<Image>().color = imageSelf.color;
+		enabled = false;
+	}
+}
+
 public class UserInterface : MonoBehaviour
 {
 	FlikittCore FlikittCore;
 	CameraManager CameraManager;
+	DrawingManager DrawingManager;
 	public bool canDraw, canPlay;
+	private List<ColorSwatch> colorSwatches = new List<ColorSwatch>();
 
 	//UI Vars
 	public Text frameCounter;
 	public Sprite cam, deletePic, notPlaying, playing;
 	public Image captureButton;
+	public Slider fpsSlider, thicknessSlider;
 
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
 		CameraManager = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
+		DrawingManager = GameObject.Find("Drawing Manager").GetComponent<DrawingManager>();
+
+		fpsSlider.maxValue = 15.0f; fpsSlider.minValue = 0.5f;
+
+		string[] colors = new string[9]{"Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Purple", "White", "Black"};
+		for(int i = 0; i < colors.Length; i++){
+			Image swatchImage = GameObject.Find(colors[i] + "_Swatch").GetComponent<Image>();
+			ColorSwatch colorSwatch = new ColorSwatch(colors[i], swatchImage);
+			colorSwatches.Add((new ColorSwatch(colors[i], swatchImage)));
+		}
+		DisableAllSwatches();
+		EnableSwatch("White");
+	}
+
+	void DisableAllSwatches(){
+		for(int i = 0; i < colorSwatches.Count; i++){
+			colorSwatches[i].disable();
+		}
+	}
+
+	void EnableSwatch(string color){
+		for(int i = 0; i < colorSwatches.Count; i++){
+			if(colorSwatches[i].getName() == color){
+				colorSwatches[i].enable();
+			}
+		}
 	}
 
 	void Update(){
 
 		int cframe = FlikittCore.currentFrame;
-		int projlength = FlikittCore.frames.Count;
+		int projlength = FlikittCore.project.getAllFrames().Count;
+
+		FlikittCore.project.setFps(fpsSlider.value);
+		DrawingManager.width = thicknessSlider.value;
 
 		frameCounter.text = cframe + " / " + projlength;
 
 		//If frame one, or some frame doesn't have a picture on it
-		if(FlikittCore.frames.Count > 1){
+		if(FlikittCore.project.getAllFrames().Count > 1){
 			bool allFine = true;
-			for(int i = 0; i < FlikittCore.frames.Count; i++){
-				if(!FlikittCore.frames[i].getHasPicture()) allFine = false;
+			for(int i = 0; i < FlikittCore.project.getAllFrames().Count; i++){
+				if(!FlikittCore.project.getFrame(i).getHasPicture()) allFine = false;
 			}
 
 			if (allFine){
@@ -193,6 +254,70 @@ public class UserInterface : MonoBehaviour
 						}
 
 						break;
+
+					case "Red_Swatch":
+
+						DrawingManager.colorName = "Red";
+						DisableAllSwatches();
+						EnableSwatch("Red");
+						break;
+
+					case "Orange_Swatch":
+
+						DrawingManager.colorName = "Orange";
+						DisableAllSwatches();
+						EnableSwatch("Orange");
+						break;
+
+					case "Yellow_Swatch":
+
+						DrawingManager.colorName = "Yellow";
+						DisableAllSwatches();
+						EnableSwatch("Yellow");
+						break;
+
+					case "Green_Swatch":
+
+						DrawingManager.colorName = "Green";
+						DisableAllSwatches();
+						EnableSwatch("Green");
+						break;
+
+					case "Blue_Swatch":
+
+						DrawingManager.colorName = "Blue";
+						DisableAllSwatches();
+						EnableSwatch("Blue");
+						break;
+
+					case "Indigo_Swatch":
+
+						DrawingManager.colorName = "Indigo";
+						DisableAllSwatches();
+						EnableSwatch("Indigo");
+						break;
+
+					case "Purple_Swatch":
+
+						DrawingManager.colorName = "Purple";
+						DisableAllSwatches();
+						EnableSwatch("Purple");
+						break;
+
+					case "White_Swatch":
+
+						DrawingManager.colorName = "White";
+						DisableAllSwatches();
+						EnableSwatch("White");
+						break;
+
+					case "Black_Swatch":
+
+						DrawingManager.colorName = "Black";
+						DisableAllSwatches();
+						EnableSwatch("Black");
+						break;
+
 
 					default:
 						break;

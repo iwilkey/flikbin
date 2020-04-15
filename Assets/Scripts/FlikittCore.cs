@@ -3,7 +3,46 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Frame{
+public class Project {
+	private string name, type;
+	private List<Frame> frames;
+	private AudioClip audio;
+	private float fps;
+
+	//Constructing a new project
+	public Project(string _name, string _type){
+		name = _name; 
+		type = _type;
+		frames = new List<Frame>();
+		audio = null;
+		fps = 7.5f;
+	}
+
+	//Loading an existing project
+	public Project(string _name, string _type, List<Frame> _frames, AudioClip _audio, float _fps){
+		name = _name;
+		type = _type;
+		frames = _frames;
+		audio = _audio;
+		fps = _fps;
+	}
+
+	//Accessor
+	public string getName() {return name;}
+	public string getType() {return type;}
+	public AudioClip getAudio() {return audio;}
+	public float getFps() {return fps;}
+	public Frame getFrame(int number) {return frames[number];}
+	public List<Frame> getAllFrames() {return frames;}
+
+	//Mutator
+	public void addFrame(Frame frame) {frames.Add(frame);}
+	public void setAudio(AudioClip _audio) {audio = _audio;}
+	public void setFps(float _fps) {fps = _fps;}
+
+}
+
+public class Frame {
 
 	private string name;
 	private bool enabled, hasPicture;
@@ -24,6 +63,7 @@ public class Frame{
 		rT.SetLeft((int)((Screen.width-Screen.height) / 2));
 		rT.SetRight((int)((Screen.width-Screen.height) / 2));
 		rT.localEulerAngles = new Vector3(0,0,-90);
+		rT.localScale = new Vector3(1,1,1);
 
 		goSelf.AddComponent<RawImage>();
 		imageSelf = goSelf.GetComponent<RawImage>();
@@ -78,27 +118,32 @@ public class Frame{
 
 public class FlikittCore : MonoBehaviour
 {
+	public Project project;
+
 	public int currentFrame = 1;
-	public List<Frame> frames;
 	public bool isPlaying;
 	public float spf;
 
 	void Start(){
-		//Is for a new project...
-		if(frames == null){
-			frames = new List<Frame>();
-			NewPage();
-		}
+		//Use easysave to find out if a project is being loaded or not...
 
-		isPlaying = false;
-		spf = 1.0f;
+		//If a new project
+		string name = "New project"; 
+		string type = "Frame-by-Frame";
+		project = new Project(name, type);
+		NewPage();
+		spf = 1 / project.getFps();
+	}
+
+	void Update(){
+		spf = 1 / project.getFps();
 	}
 
 	public void NewPage(){
 		DisableAll();
 		currentFrame++;
 		Frame frame = new Frame(currentFrame);
-		frames.Add(frame);
+		project.addFrame(frame);
 		EnableActive(currentFrame);
 	}
 
@@ -109,23 +154,24 @@ public class FlikittCore : MonoBehaviour
 	}
 
 	void DisableAll(){
-		for(int i = 0; i < frames.Count; i++){
-			frames[i].setStatus("Off");
+		for(int i = 0; i < project.getAllFrames().Count; i++){
+			project.getFrame(i).setStatus("Off");
 		}
 	}
 
 	void EnableActive(int currentFrame){
-		for(int i = 0; i < frames.Count; i++){
-			if(frames[i].getName() == "Frame " + currentFrame){
-				frames[i].setStatus("On");
+		for(int i = 0; i < project.getAllFrames().Count; i++){
+			if(project.getFrame(i).getName() == "Frame " + currentFrame){
+				project.getFrame(i).setStatus("On");
 			}
 		}
 	}
 
 	public Frame getCurrentFrame(){
-		for(int i = 0; i <= frames.Count; i++){
-			if(frames[i].getName() == (string)("Frame " + currentFrame.ToString())){
-				return frames[i];
+
+		for(int i = 0; i <= project.getAllFrames().Count; i++){
+			if(project.getFrame(i).getName() == (string)("Frame " + currentFrame.ToString())){
+				return project.getFrame(i);
 			}
 		}
 		return null;
@@ -133,7 +179,7 @@ public class FlikittCore : MonoBehaviour
 
 	private IEnumerator coroutine;
 	public void StartPlay(){
-		if(frames.Count > 1){
+		if(project.getAllFrames().Count > 1){
 			LoadPage(1);
 			coroutine = Play();
 			StartCoroutine(coroutine);
@@ -143,7 +189,7 @@ public class FlikittCore : MonoBehaviour
 	}
 
 	private IEnumerator Play(){
-		for (int i = 1; i <= frames.Count; i++){
+		for (int i = 1; i <= project.getAllFrames().Count; i++){
 			DisableAll();
 			EnableActive(i);
 			currentFrame = i;

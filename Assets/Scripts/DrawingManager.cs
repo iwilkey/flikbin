@@ -36,17 +36,21 @@ public class DrawingManager : MonoBehaviour
 
 	void TouchToDraw(){
 		if(Input.touchCount > 0){
-			if(UserInterface.canDraw){
-				touch = Input.GetTouch(0);
-				if(touch.phase == TouchPhase.Began && touch.phase != TouchPhase.Moved){
-					currentLine++;
-					GameObject line = Instantiate(PencilLine);
-					line.name = "Line " + currentLine;
+			if(FlikittCore.project.getFrame(FlikittCore.currentFrame - 1).getHasPicture()){
+				if(!FlikittCore.isPlaying){
+					if(UserInterface.canDraw){
+						touch = Input.GetTouch(0);
+						if(touch.phase == TouchPhase.Began && touch.phase != TouchPhase.Moved){
+							currentLine++;
+							GameObject line = Instantiate(PencilLine);
+							line.name = "Line " + currentLine;
 
-					activeLine = line.GetComponent<Line>();
+							activeLine = line.GetComponent<Line>();
 
-					int currentFrame = FlikittCore.currentFrame;
-					line.transform.parent = FlikittCore.frames[currentFrame - 1].getGOSelf().transform;
+							int currentFrame = FlikittCore.currentFrame;
+							line.transform.parent = FlikittCore.project.getFrame(currentFrame - 1).getGOSelf().transform;
+						}
+					}
 				}
 			}
 		}

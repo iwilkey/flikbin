@@ -67,4 +67,9 @@ public class CameraManager : MonoBehaviour
 		FlikittCore.getCurrentFrame().setPicture(null);
 		FlikittCore.getCurrentFrame().setHasPicture(false);
 	}
+
+	public void DeleteSpecificCapture(int index){
+		FlikittCore.project.getFrame(index).setPicture(null);
+		FlikittCore.project.getFrame(index).setHasPicture(false);
+	}
 }

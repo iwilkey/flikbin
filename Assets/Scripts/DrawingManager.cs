@@ -5,21 +5,13 @@ using UnityEngine;
 public class DrawingManager : MonoBehaviour
 {
 	FlikittCore FlikittCore;
-
 	UserInterface UserInterface;
-
 	public GameObject PencilLine;
-
 	public Color color;
-
 	public string colorName;
-
 	public float width;
-
 	private int currentLine;
-
 	private Line activeLine;
-
 	private Touch touch;
 
 	void Start(){
@@ -30,25 +22,29 @@ public class DrawingManager : MonoBehaviour
 	}
 
 	void Update(){
-		LineAttributor();
-		TouchToDraw();
+		if(FlikittCore.drawMode == "Pencil" && Input.mousePosition.y > 130.0f){
+			LineAttributor();
+			TouchToDraw();
+		}
 	}
 
 	void TouchToDraw(){
-		if(Input.touchCount > 0){
+		if(Input.touchCount == 1){
 			if(FlikittCore.project.getFrame(FlikittCore.currentFrame - 1).getHasPicture()){
 				if(!FlikittCore.isPlaying){
 					if(UserInterface.canDraw){
 						touch = Input.GetTouch(0);
 						if(touch.phase == TouchPhase.Began && touch.phase != TouchPhase.Moved){
-							currentLine++;
-							GameObject line = Instantiate(PencilLine);
-							line.name = "Line " + currentLine;
+							if(touch.position.y > 230.0f){
+								currentLine++;
+								GameObject line = Instantiate(PencilLine);
+								line.name = "Line " + currentLine;
 
-							activeLine = line.GetComponent<Line>();
+								activeLine = line.GetComponent<Line>();
 
-							int currentFrame = FlikittCore.currentFrame;
-							line.transform.parent = FlikittCore.project.getFrame(currentFrame - 1).getGOSelf().transform;
+								int currentFrame = FlikittCore.currentFrame;
+								line.transform.parent = FlikittCore.project.getFrame(currentFrame - 1).getGOSelf().transform;
+							}
 						}
 					}
 				}

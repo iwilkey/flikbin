@@ -1,9 +1,9 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Project {
+public class Project : MonoBehaviour {
 	private string name, type;
 	private List<Frame> frames;
 	private AudioClip audio;
@@ -39,6 +39,15 @@ public class Project {
 	public void addFrame(Frame frame) {frames.Add(frame);}
 	public void setAudio(AudioClip _audio) {audio = _audio;}
 	public void setFps(float _fps) {fps = _fps;}
+
+	public void deleteFrame(Frame frame){
+		for (int i = 0; i < frames.Count; i++){
+			if (frames[i].getName() == frame.getName()){
+				Destroy(frames[i].getGOSelf());
+				frames.RemoveAt(i);
+			}
+		}
+	}
 
 }
 
@@ -119,12 +128,15 @@ public class Frame {
 public class FlikittCore : MonoBehaviour
 {
 	public Project project;
+	CameraManager CameraManager;
 
 	public int currentFrame = 1;
-	public bool isPlaying;
+	public bool isPlaying, continuousShot, isShooting;
 	public float spf;
+	public string drawMode;
 
 	void Start(){
+		CameraManager = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
 		//Use easysave to find out if a project is being loaded or not...
 
 		//If a new project
@@ -133,6 +145,8 @@ public class FlikittCore : MonoBehaviour
 		project = new Project(name, type);
 		NewPage();
 		spf = 1 / project.getFps();
+
+		drawMode = "Pencil";
 	}
 
 	void Update(){
@@ -204,6 +218,35 @@ public class FlikittCore : MonoBehaviour
 			StartPlay();
 		} else {
 			LoadPage(1);
+			yield break;
+		}
+	}
+
+	private IEnumerator contShotCoroutine;
+	public void StartShot(){
+		contShotCoroutine = Shoot();
+		StartCoroutine(contShotCoroutine);
+	}
+
+	private IEnumerator Shoot(){
+		if(isShooting){
+			CameraManager.Capture();
+
+			if(project.getAllFrames().Count >= currentFrame + 1){
+				if(project.getFrame(currentFrame).getHasPicture()){
+					CameraManager.DeleteSpecificCapture(currentFrame);
+					LoadPage(currentFrame + 1);
+				} else {
+					LoadPage(currentFrame + 1);
+				}
+			} else {
+				NewPage();
+			}
+
+			yield return new WaitForSeconds(spf);
+
+			StartShot();
+		} else {
 			yield break;
 		}
 	}

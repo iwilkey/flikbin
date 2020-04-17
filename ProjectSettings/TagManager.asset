@@ -9,6 +9,9 @@ TagManager:
   - Line
   - UI
   - Frame
+  - DrawingTools
+  - EssentialUI
+  - CaptureTools
   layers:
   - Default
   - TransparentFX

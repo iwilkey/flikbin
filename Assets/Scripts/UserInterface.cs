@@ -42,9 +42,12 @@ public class UserInterface : MonoBehaviour
 
 	//UI Vars
 	public Text frameCounter;
-	public Sprite cam, deletePic, notPlaying, playing;
-	public Image captureButton;
+	public Sprite cam, deletePic, notPlaying, playing, pencilOn, pencilOff, eraserOn, eraserOff;
+	public Image captureButton, pencil, eraser, selectCam, selectDraw;
 	public Slider fpsSlider, thicknessSlider;
+	public Toggle contShot;
+
+	public string mode;
 
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
@@ -61,6 +64,10 @@ public class UserInterface : MonoBehaviour
 		}
 		DisableAllSwatches();
 		EnableSwatch("White");
+
+		SetMode("Capture");
+
+		contShot.isOn = false;
 	}
 
 	void DisableAllSwatches(){
@@ -77,6 +84,63 @@ public class UserInterface : MonoBehaviour
 		}
 	}
 
+	public void SetMode(string _mode){
+
+		mode = _mode;
+		foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+		 	if(obj.IsChildOf(GameObject.Find("User Interface").transform) && obj.name != "User Interface"){
+		 		obj.gameObject.SetActive(false);
+		 	}
+		 }
+
+		foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+			if(obj.gameObject.CompareTag("EssentialUI")){
+				obj.gameObject.SetActive(true);
+			}
+		}
+
+		if(_mode == "Drawing"){
+			foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+				if(obj.gameObject.CompareTag("DrawingTools")){
+					obj.gameObject.SetActive(true);
+				}
+
+				if(obj.name == "Thickness Slider"){
+					for(int i = 0; i < obj.childCount; i++){
+						obj.GetChild(i).gameObject.SetActive(true);
+						for(int p = 0; p < obj.GetChild(i).childCount; p++){
+							obj.GetChild(i).GetChild(p).gameObject.SetActive(true);
+						}
+					}
+				}
+			}
+		} else if (_mode == "Capture"){
+			foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+				if(obj.gameObject.CompareTag("CaptureTools")){
+					obj.gameObject.SetActive(true);
+				}
+
+				if(obj.name == "FPS Slider"){
+					for(int i = 0; i < obj.childCount; i++){
+						obj.GetChild(i).gameObject.SetActive(true);
+						for(int p = 0; p < obj.GetChild(i).childCount; p++){
+							obj.GetChild(i).GetChild(p).gameObject.SetActive(true);
+						}
+					}
+				}
+
+				if(obj.name == "Continuous Shot Toggle"){
+					for (int i = 0; i < obj.childCount; i++){
+						obj.GetChild(i).gameObject.SetActive(true);
+						for(int p = 0; p < obj.GetChild(i).childCount; p++){
+							obj.GetChild(i).GetChild(p).gameObject.SetActive(true);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	void Update(){
 
 		int cframe = FlikittCore.currentFrame;
@@ -86,6 +150,28 @@ public class UserInterface : MonoBehaviour
 		DrawingManager.width = thicknessSlider.value;
 
 		frameCounter.text = cframe + " / " + projlength;
+
+		if(FlikittCore.drawMode == "Pencil"){
+			pencil.sprite = pencilOn;
+			eraser.sprite = eraserOff;
+		} else {
+			pencil.sprite = pencilOff;
+			eraser.sprite = eraserOn;
+		}
+
+		if(Input.touchCount == 2){
+			FlikittCore.drawMode = "Eraser";
+		}
+
+		if(Input.touchCount >= 3){
+			FlikittCore.drawMode = "Pencil";
+		}
+			
+		if(contShot.isOn){
+			FlikittCore.continuousShot = true;
+		} else {
+			FlikittCore.continuousShot = false;
+		}
 
 		//If frame one, or some frame doesn't have a picture on it
 		if(FlikittCore.project.getAllFrames().Count > 1){
@@ -102,13 +188,14 @@ public class UserInterface : MonoBehaviour
 		} else {
 			canPlay = false;
 		}
-
-		if(!canPlay){
-			Image playButton = GameObject.Find("Play / Pause").GetComponent<Image>();
-			playButton.color = new Color(playButton.color.r, playButton.color.g, playButton.color.b, 0.1f);
-		} else {
-			Image playButton = GameObject.Find("Play / Pause").GetComponent<Image>();
-			playButton.color = new Color(playButton.color.r, playButton.color.g, playButton.color.b, 1.0f);
+		if(mode == "Capture"){
+			if(!canPlay){
+				Image playButton = GameObject.Find("Play / Pause").GetComponent<Image>();
+				playButton.color = new Color(playButton.color.r, playButton.color.g, playButton.color.b, 0.1f);
+			} else {
+				Image playButton = GameObject.Find("Play / Pause").GetComponent<Image>();
+				playButton.color = new Color(playButton.color.r, playButton.color.g, playButton.color.b, 1.0f);
+			}
 		}
 
 		//Turning off camera feed event
@@ -127,6 +214,14 @@ public class UserInterface : MonoBehaviour
 				}
 			}
 			captureButton.sprite = cam;
+		}
+
+		if(mode == "Capture"){
+			selectDraw.color = new Color(selectDraw.color.r, selectDraw.color.g, selectDraw.color.b, 0.1f);
+			selectCam.color = new Color(selectCam.color.r, selectCam.color.g, selectCam.color.b, 1.0f);
+		} else {
+			selectDraw.color = new Color(selectDraw.color.r, selectDraw.color.g, selectDraw.color.b, 1.0f);
+			selectCam.color = new Color(selectCam.color.r, selectCam.color.g, selectCam.color.b, 0.1f);
 		}
 
 		//Muting frame selectors
@@ -160,26 +255,42 @@ public class UserInterface : MonoBehaviour
 			back.color = new Color(back.color.r, back.color.g, back.color.b, 0.1f);
 		}
 
-		//Playing events
-		if(FlikittCore.isPlaying){
-			Image playButton = GameObject.Find("Play / Pause").GetComponent<Image>();
-			playButton.sprite = playing;
+		if(mode == "Capture"){
+			//Playing events
+			if(FlikittCore.isPlaying){
+				Image playButton = GameObject.Find("Play / Pause").GetComponent<Image>();
+				playButton.sprite = playing;
 
-			Image camButton = GameObject.Find("Capture Button").GetComponent<Image>();
-			camButton.color = new Color(camButton.color.r, camButton.color.g, camButton.color.b, 0.1f);
+				Image camButton = GameObject.Find("Capture Button").GetComponent<Image>();
+				camButton.color = new Color(camButton.color.r, camButton.color.g, camButton.color.b, 0.1f);
 
-			Image micButton = GameObject.Find("Microphone").GetComponent<Image>();
-			micButton.color = new Color(micButton.color.r, micButton.color.g, micButton.color.b, 0.1f);
+				Image micButton = GameObject.Find("Microphone").GetComponent<Image>();
+				micButton.color = new Color(micButton.color.r, micButton.color.g, micButton.color.b, 0.1f);
 
+			} else {
+				Image playButton = GameObject.Find("Play / Pause").GetComponent<Image>();
+				playButton.sprite = notPlaying;
+
+				Image camButton = GameObject.Find("Capture Button").GetComponent<Image>();
+				camButton.color = new Color(camButton.color.r, camButton.color.g, camButton.color.b, 1.0f);
+
+				Image micButton = GameObject.Find("Microphone").GetComponent<Image>();
+				micButton.color = new Color(micButton.color.r, micButton.color.g, micButton.color.b, 1.0f);
+			}
 		} else {
-			Image playButton = GameObject.Find("Play / Pause").GetComponent<Image>();
-			playButton.sprite = notPlaying;
+			if (FlikittCore.project.getAllFrames().Count < FlikittCore.currentFrame + 1){
+				Image forward = GameObject.Find("Forward").GetComponent<Image>();
+				forward.color = new Color(forward.color.r, forward.color.g, forward.color.b, 0.1f);
+			}
+		}
 
-			Image camButton = GameObject.Find("Capture Button").GetComponent<Image>();
-			camButton.color = new Color(camButton.color.r, camButton.color.g, camButton.color.b, 1.0f);
-
-			Image micButton = GameObject.Find("Microphone").GetComponent<Image>();
-			micButton.color = new Color(micButton.color.r, micButton.color.g, micButton.color.b, 1.0f);
+		if(FlikittCore.drawMode == "Eraser"){
+			Vector3 fingerPosition2 = Input.mousePosition;
+			fingerPosition2.z = Mathf.Infinity;
+			RaycastHit2D hit2 = Physics2D.Raycast(fingerPosition2, fingerPosition2 - Camera.main.ScreenToWorldPoint(fingerPosition2), Mathf.Infinity);
+			if(hit2.collider != null){
+				print(hit2.collider.gameObject.name);
+			}
 		}
 
 		//This is bad way to do this, find a way to meld them together...
@@ -194,6 +305,18 @@ public class UserInterface : MonoBehaviour
 			}
 		}
 
+		if(Input.touchCount == 0 && FlikittCore.isShooting){
+			FlikittCore.isShooting = false;
+			print("DID!");
+			if(FlikittCore.project.getAllFrames().Count - 1 >= 1)
+				FlikittCore.project.deleteFrame(FlikittCore.project.getFrame(FlikittCore.project.getAllFrames().Count - 1));
+				FlikittCore.LoadPage(FlikittCore.currentFrame - 1);
+		}
+
+		/*
+		MODE MANAGEMENT!
+		*/
+
 		//For buttons (happens once)
 		if(Input.GetMouseButtonDown(0)){
 			Vector3 fingerPosition = Input.mousePosition;
@@ -206,7 +329,7 @@ public class UserInterface : MonoBehaviour
 						if(!FlikittCore.isPlaying){
 							if(FlikittCore.getCurrentFrame().getHasPicture()){
 								if(cframe + 1 > projlength){
-									FlikittCore.NewPage();
+									if(mode != "Drawing") FlikittCore.NewPage();
 								} else {
 									FlikittCore.LoadPage(cframe + 1);
 								}
@@ -231,11 +354,22 @@ public class UserInterface : MonoBehaviour
 
 					case "Capture Button":
 
-						if(!FlikittCore.isPlaying){
-							if(FlikittCore.getCurrentFrame().getHasPicture()){
-								CameraManager.DeleteCapture();
-							} else {
-								CameraManager.Capture();
+						if(!FlikittCore.continuousShot){
+							if(!FlikittCore.isPlaying){
+								if(FlikittCore.getCurrentFrame().getHasPicture()){
+									CameraManager.DeleteCapture();
+								} else {
+									CameraManager.Capture();
+								}
+							}
+						} else {
+							if(!FlikittCore.isPlaying){
+								if(FlikittCore.getCurrentFrame().getHasPicture()){
+									CameraManager.DeleteCapture();
+								} else {
+									FlikittCore.isShooting = true;
+									FlikittCore.StartShot();
+								}
 							}
 						}
 
@@ -316,6 +450,31 @@ public class UserInterface : MonoBehaviour
 						DrawingManager.colorName = "Black";
 						DisableAllSwatches();
 						EnableSwatch("Black");
+						break;
+
+					case "Pencil":
+
+						if(FlikittCore.drawMode != "Pencil") {FlikittCore.drawMode = "Pencil";}
+						break;
+
+					case "Eraser":
+
+						if(FlikittCore.drawMode != "Eraser") {FlikittCore.drawMode = "Eraser";}
+						break;
+
+					case "SelectCapture":
+
+						if(mode != "Capture") { SetMode("Capture"); }
+						break;
+
+					case "SelectDrawing":
+
+						bool canProceed = true;
+						for(int i = 0; i < FlikittCore.project.getAllFrames().Count; i++){
+							if(!FlikittCore.project.getFrame(i).getHasPicture()) canProceed = false;
+						}
+
+						if(canProceed) { if(mode != "Drawing") { SetMode("Drawing"); } }
 						break;
 
 

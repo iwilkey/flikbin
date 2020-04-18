@@ -43,7 +43,7 @@ public class UserInterface : MonoBehaviour
 	//UI Vars
 	public Text frameCounter;
 	public Sprite cam, deletePic, notPlaying, playing, pencilOn, pencilOff, eraserOn, eraserOff;
-	public Image captureButton, pencil, eraser, selectCam, selectDraw;
+	public Image captureButton, pencil, eraser, selectCam, selectDraw, copyFrame, trash, mic, insert;
 	public Slider fpsSlider, thicknessSlider;
 	public Toggle contShot;
 
@@ -285,12 +285,22 @@ public class UserInterface : MonoBehaviour
 		}
 
 		if(FlikittCore.drawMode == "Eraser"){
-			Vector3 fingerPosition2 = Input.mousePosition;
-			fingerPosition2.z = Mathf.Infinity;
-			RaycastHit2D hit2 = Physics2D.Raycast(fingerPosition2, fingerPosition2 - Camera.main.ScreenToWorldPoint(fingerPosition2), Mathf.Infinity);
-			if(hit2.collider != null){
-				print(hit2.collider.gameObject.name);
+			if(Input.touchCount == 1){
+				Touch touch = Input.GetTouch(0);
+				Vector3 touchPos = touch.position;
+				touchPos.z = 0;
+				touchPos = Camera.main.ScreenToWorldPoint(touchPos);
+				Vector2 twoDTouchPos = new Vector2(touchPos.x, touchPos.y);
+				
+				for(int i = 0; i < FlikittCore.getCurrentFrame().getGOSelf().transform.childCount; i++){
+					for(int p = 0; p < FlikittCore.getCurrentFrame().getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().positionCount; p++){
+						if(Vector2.Distance(twoDTouchPos, FlikittCore.getCurrentFrame().getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().GetPosition(p)) < 0.2f){
+							Destroy(FlikittCore.getCurrentFrame().getGOSelf().transform.GetChild(i).gameObject);
+						}
+					}
+				}
 			}
+
 		}
 
 		//This is bad way to do this, find a way to meld them together...
@@ -308,10 +318,43 @@ public class UserInterface : MonoBehaviour
 		if(Input.touchCount == 0 && FlikittCore.isShooting){
 			FlikittCore.isShooting = false;
 			print("DID!");
-			if(FlikittCore.project.getAllFrames().Count - 1 >= 1)
-				FlikittCore.project.deleteFrame(FlikittCore.project.getFrame(FlikittCore.project.getAllFrames().Count - 1));
-				FlikittCore.LoadPage(FlikittCore.currentFrame - 1);
+			if(FlikittCore.project.getAllFrames().Count - 1 > 1){ //Check if project is bigger than one frame...
+				if(FlikittCore.project.getAllFrames().Count >= FlikittCore.currentFrame + 1){ //Check if we aren't on the last frame
+					FlikittCore.project.deleteFrame(FlikittCore.project.getFrame(FlikittCore.currentFrame - 1));
+					FlikittCore.LoadPage(FlikittCore.currentFrame - 1);
+				} else {
+					FlikittCore.project.deleteFrame(FlikittCore.project.getFrame(FlikittCore.project.getAllFrames().Count - 1));
+					FlikittCore.LoadPage(FlikittCore.currentFrame - 1);
+				}
+			}
 		}
+
+		if(FlikittCore.currentFrame == 1 && !FlikittCore.isPlaying){
+			copyFrame.color = new Color(copyFrame.color.r, copyFrame.color.g, copyFrame.color.b, 0.1f);
+		} else if (FlikittCore.currentFrame != 1 && !FlikittCore.isPlaying) {
+			if(FlikittCore.getCurrentFrame().getHasPicture()){
+				if(FlikittCore.project.getFrame(FlikittCore.currentFrame - 2).getGOSelf().transform.childCount != 0){
+					copyFrame.color = new Color(copyFrame.color.r, copyFrame.color.g, copyFrame.color.b, 1.0f);
+				} else {
+					copyFrame.color = new Color(copyFrame.color.r, copyFrame.color.g, copyFrame.color.b, 0.1f);
+				}
+			} else {
+				copyFrame.color = new Color(copyFrame.color.r, copyFrame.color.g, copyFrame.color.b, 0.1f);
+			}
+		} else if (FlikittCore.isPlaying){
+			copyFrame.color = new Color(copyFrame.color.r, copyFrame.color.g, copyFrame.color.b, 1.0f);
+		}
+
+		if(FlikittCore.project.getAllFrames().Count == 1 && !FlikittCore.isPlaying){
+			trash.color = new Color(trash.color.r, trash.color.g, trash.color.b, 0.1f);
+		} else if (FlikittCore.isPlaying){
+			trash.color = new Color(trash.color.r, trash.color.g, trash.color.b, 1.0f);
+		} else {
+			trash.color = new Color(trash.color.r, trash.color.g, trash.color.b, 1.0f);
+		}
+
+		mic.color = new Color(mic.color.r, mic.color.g, mic.color.b, 0.1f);
+		insert.color = new Color(insert.color.r, insert.color.g, insert.color.b, 0.1f);
 
 		/*
 		MODE MANAGEMENT!
@@ -475,6 +518,30 @@ public class UserInterface : MonoBehaviour
 						}
 
 						if(canProceed) { if(mode != "Drawing") { SetMode("Drawing"); } }
+						break;
+
+					case "Trash":
+
+					//...You can still delete frame one?!
+						if(!FlikittCore.isPlaying){
+							if(FlikittCore.project.getAllFrames().Count >= FlikittCore.currentFrame + 1){
+								FlikittCore.project.deleteFrame(FlikittCore.project.getFrame(FlikittCore.currentFrame - 1));
+								FlikittCore.LoadPage(FlikittCore.currentFrame);
+							} else if (FlikittCore.currentFrame == FlikittCore.project.getAllFrames().Count){
+								FlikittCore.project.deleteFrame(FlikittCore.project.getFrame(FlikittCore.currentFrame - 1));
+								FlikittCore.LoadPage(FlikittCore.currentFrame - 1);
+							}
+						}
+						break;
+
+					case "Copy":
+
+						if(!FlikittCore.isPlaying){
+							if(FlikittCore.getCurrentFrame().getHasPicture()){
+								if(FlikittCore.currentFrame != 1)
+									FlikittCore.project.CopyLines(FlikittCore.project.getFrame(FlikittCore.currentFrame - 2));
+							}
+						}
 						break;
 
 

@@ -12,8 +12,8 @@ public class Line : MonoBehaviour
 	public EdgeCollider2D edgeCol;
 	List<Vector2> points;
 
-	private Color color;
-	private float width;
+	public Color color;
+	public float width;
 
 	private const int boundY = 130;
 
@@ -46,9 +46,6 @@ public class Line : MonoBehaviour
 			renderer.SetWidth(width, width);
 			renderer.positionCount = points.Count;
 			renderer.SetPosition(points.Count - 1, point);
-
-			if(points.Count > 1)
-				edgeCol.points = points.ToArray();
 		}
 	}
 

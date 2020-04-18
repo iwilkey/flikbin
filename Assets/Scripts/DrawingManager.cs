@@ -10,7 +10,7 @@ public class DrawingManager : MonoBehaviour
 	public Color color;
 	public string colorName;
 	public float width;
-	private int currentLine;
+	public int currentLine;
 	private Line activeLine;
 	private Touch touch;
 
@@ -31,7 +31,7 @@ public class DrawingManager : MonoBehaviour
 	void TouchToDraw(){
 		if(Input.touchCount == 1){
 			if(FlikittCore.project.getFrame(FlikittCore.currentFrame - 1).getHasPicture()){
-				if(!FlikittCore.isPlaying){
+				if(!FlikittCore.isPlaying && UserInterface.mode == "Drawing"){
 					if(UserInterface.canDraw){
 						touch = Input.GetTouch(0);
 						if(touch.phase == TouchPhase.Began && touch.phase != TouchPhase.Moved){

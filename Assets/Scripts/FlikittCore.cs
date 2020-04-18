@@ -4,15 +4,21 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class Project : MonoBehaviour {
+	DrawingManager dm;
+	FlikittCore fc;
 	private string name, type;
 	private List<Frame> frames;
 	private AudioClip audio;
 	private float fps;
+	private GameObject linePrefab;
 
 	//Constructing a new project
-	public Project(string _name, string _type){
+	public Project(string _name, string _type, GameObject _linePrefab){
+		dm = GameObject.Find("Drawing Manager").GetComponent<DrawingManager>();
+		fc = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
 		name = _name; 
 		type = _type;
+		linePrefab = _linePrefab;
 		frames = new List<Frame>();
 		audio = null;
 		fps = 7.5f;
@@ -46,6 +52,48 @@ public class Project : MonoBehaviour {
 				Destroy(frames[i].getGOSelf());
 				frames.RemoveAt(i);
 			}
+		}
+
+		for (int i = 0; i < frames.Count; i++){
+			if(frames[i].getName() != "Frame " + i + 1){
+				frames[i].setName(i + 1);
+			}
+		}
+	}
+
+	public void CopyLines(Frame frame){
+		int lineAmount = frame.getGOSelf().transform.childCount;
+		List<Color> lineColors = new List<Color>();
+		List<float> lineThicknesses = new List<float>();
+		List<List<Vector2>> linePoints = new List<List<Vector2>>();
+
+		for(int i = 0; i < lineAmount; i++){
+			lineColors.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<Line>().color);
+			lineThicknesses.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().startWidth);
+
+			List<Vector2> points = new List<Vector2>();
+			for(int p = 0; p < frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().positionCount; p++){
+				points.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().GetPosition(p));
+			}
+			linePoints.Add(points);
+		}
+
+		for(int i = 0; i < lineAmount; i++){
+			dm.currentLine++;
+			GameObject line = Instantiate(linePrefab);
+			line.name = "Line " + dm.currentLine;
+
+			LineRenderer renderer = line.GetComponent<LineRenderer>();
+
+			renderer.SetColors(lineColors[i], lineColors[i]);
+			renderer.SetWidth(lineThicknesses[i], lineThicknesses[i]);
+			renderer.positionCount = linePoints[i].Count;
+
+			for(int p = 0; p < renderer.positionCount; p++){
+				renderer.SetPosition(p, linePoints[i][p]);
+			}
+
+			line.transform.parent = fc.project.getFrame(fc.currentFrame - 1).getGOSelf().transform;
 		}
 	}
 
@@ -107,7 +155,10 @@ public class Frame {
 		}
 	}
 
-	public void setName(int num) {name = "Frame " + num;}
+	public void setName(int num) {
+		name = "Frame " + num;
+		goSelf.name = name;
+	}
 	public string getName() {return name;}
 	public bool getHasPicture(){return hasPicture;}
 	public void setHasPicture(bool p) {hasPicture = p;}
@@ -128,6 +179,7 @@ public class Frame {
 public class FlikittCore : MonoBehaviour
 {
 	public Project project;
+	public GameObject linePrefab;
 	CameraManager CameraManager;
 
 	public int currentFrame = 1;
@@ -142,7 +194,7 @@ public class FlikittCore : MonoBehaviour
 		//If a new project
 		string name = "New project"; 
 		string type = "Frame-by-Frame";
-		project = new Project(name, type);
+		project = new Project(name, type, linePrefab);
 		NewPage();
 		spf = 1 / project.getFps();
 
@@ -230,6 +282,7 @@ public class FlikittCore : MonoBehaviour
 
 	private IEnumerator Shoot(){
 		if(isShooting){
+
 			CameraManager.Capture();
 
 			if(project.getAllFrames().Count >= currentFrame + 1){

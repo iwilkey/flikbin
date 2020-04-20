@@ -42,12 +42,13 @@ public class UserInterface : MonoBehaviour
 
 	//UI Vars
 	public Text frameCounter;
-	public Sprite cam, deletePic, notPlaying, playing, pencilOn, pencilOff, eraserOn, eraserOff;
-	public Image captureButton, pencil, eraser, selectCam, selectDraw, copyFrame, trash, mic, insert;
-	public Slider fpsSlider, thicknessSlider;
-	public Toggle contShot;
+	public Sprite cam, deletePic, notPlaying, playing, pencilOn, pencilOff, eraserOn, eraserOff, contShotOn, contShotOff, copy, paste;
+	public Image captureButton, pencil, eraser, selectCam, selectDraw, copyFrame, trash, mic, insert, contShot, selectEdit, copyLength1, copyLength2, copyPaste;
+	public Slider fpsSlider, thicknessSlider, frameScrubber;
 
 	public string mode;
+
+	private string frameSelected1 = "?"; private string frameSelected2 = "?"; private string frameToCopy = "?";
 
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
@@ -67,7 +68,8 @@ public class UserInterface : MonoBehaviour
 
 		SetMode("Capture");
 
-		contShot.isOn = false;
+		contShot.sprite = contShotOff;
+		copyLength1.color = new Color(copyLength1.color.r, copyLength1.color.g, copyLength1.color.b, 1.0f);
 	}
 
 	void DisableAllSwatches(){
@@ -128,9 +130,20 @@ public class UserInterface : MonoBehaviour
 						}
 					}
 				}
+			}
+		} else if (_mode == "Edit"){
+			foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+				if(obj.gameObject.name == "Forward" || obj.gameObject.name == "Back"){
+					obj.gameObject.SetActive(false);
+				}
+			}
+			foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+				if(obj.gameObject.CompareTag("EditTools")){
+					obj.gameObject.SetActive(true);
+				}
 
-				if(obj.name == "Continuous Shot Toggle"){
-					for (int i = 0; i < obj.childCount; i++){
+				if(obj.name == "Frame Scrubber"){
+					for(int i = 0; i < obj.childCount; i++){
 						obj.GetChild(i).gameObject.SetActive(true);
 						for(int p = 0; p < obj.GetChild(i).childCount; p++){
 							obj.GetChild(i).GetChild(p).gameObject.SetActive(true);
@@ -151,6 +164,59 @@ public class UserInterface : MonoBehaviour
 
 		frameCounter.text = cframe + " / " + projlength;
 
+		if(!FlikittCore.isPlaying){
+			if(frameSelected1 == "?"){
+				copyLength1.color = new Color(copyLength1.color.r, copyLength1.color.g, copyLength1.color.b, 1.0f);
+				copyLength2.color = new Color(copyLength2.color.r, copyLength2.color.g, copyLength2.color.b, 0.1f);
+			} else if (frameSelected2 == "?") {
+				if(FlikittCore.currentFrame > int.Parse(frameSelected1)){
+					copyLength1.color = new Color(copyLength1.color.r, copyLength1.color.g, copyLength1.color.b, 0.1f);
+					copyLength2.color = new Color(copyLength2.color.r, copyLength2.color.g, copyLength2.color.b, 1.0f);
+				} else if (FlikittCore.currentFrame < int.Parse(frameSelected1)){
+					frameSelected2 = "?";
+					frameSelected1 = "?";
+				}
+			}
+		} else {
+			copyLength1.color = new Color(copyLength1.color.r, copyLength1.color.g, copyLength1.color.b, 0.1f);
+			copyLength2.color = new Color(copyLength2.color.r, copyLength2.color.g, copyLength2.color.b, 0.1f);
+		}
+
+		if(!FlikittCore.isPlaying){
+			copyPaste.color = new Color(copyPaste.color.r, copyPaste.color.g, copyPaste.color.b, 1.0f);
+			if(frameToCopy == "?"){
+				copyPaste.sprite = copy;
+			} else {
+				copyPaste.sprite = paste;
+			}
+		} else {
+			copyPaste.color = new Color(copyPaste.color.r, copyPaste.color.g, copyPaste.color.b, 0.1f);
+		}
+
+		if(mode == "Edit"){
+			Text frameCounter2 = GameObject.Find("Frame Counter_Edit").GetComponent<Text>();
+			frameCounter2.text = cframe + " / " + projlength;
+
+			Text start = GameObject.Find("CopyLengthStart").GetComponent<Text>();
+			start.text = frameSelected1.ToString();
+
+			Text end = GameObject.Find("CopyLengthEnd").GetComponent<Text>();
+			end.text = frameSelected2.ToString();
+
+			Text frameToCopi = GameObject.Find("FrameToCopy").GetComponent<Text>();
+			frameToCopi.text = frameToCopy;
+		}
+
+		if(mode == "Edit"){
+			frameScrubber.maxValue = FlikittCore.project.getAllFrames().Count; frameScrubber.minValue = 1;
+
+			if(FlikittCore.isPlaying){
+				frameScrubber.value = FlikittCore.currentFrame;
+			} else {
+				FlikittCore.LoadPage((int)frameScrubber.value);
+			}
+		}
+
 		if(FlikittCore.drawMode == "Pencil"){
 			pencil.sprite = pencilOn;
 			eraser.sprite = eraserOff;
@@ -167,7 +233,7 @@ public class UserInterface : MonoBehaviour
 			FlikittCore.drawMode = "Pencil";
 		}
 			
-		if(contShot.isOn){
+		if(contShot.sprite == contShotOn){
 			FlikittCore.continuousShot = true;
 		} else {
 			FlikittCore.continuousShot = false;
@@ -198,6 +264,24 @@ public class UserInterface : MonoBehaviour
 			}
 		}
 
+		if(mode == "Edit"){
+			selectEdit.color = new Color(selectEdit.color.r, selectEdit.color.g, selectEdit.color.b, 1.0f);
+		} else {
+			selectEdit.color = new Color(selectEdit.color.r, selectEdit.color.g, selectEdit.color.b, 0.1f);
+		}
+
+		if(mode == "Capture"){
+			selectCam.color = new Color(selectCam.color.r, selectCam.color.g, selectCam.color.b, 1.0f);
+		} else {
+			selectCam.color = new Color(selectCam.color.r, selectCam.color.g, selectCam.color.b, 0.1f);
+		}
+
+		if(mode == "Drawing"){
+			selectDraw.color = new Color(selectDraw.color.r, selectDraw.color.g, selectDraw.color.b, 1.0f);
+		} else {
+			selectDraw.color = new Color(selectDraw.color.r, selectDraw.color.g, selectDraw.color.b, 0.1f);
+		}
+
 		//Turning off camera feed event
 		if(FlikittCore.getCurrentFrame().getHasPicture()){
 			foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
@@ -216,16 +300,8 @@ public class UserInterface : MonoBehaviour
 			captureButton.sprite = cam;
 		}
 
-		if(mode == "Capture"){
-			selectDraw.color = new Color(selectDraw.color.r, selectDraw.color.g, selectDraw.color.b, 0.1f);
-			selectCam.color = new Color(selectCam.color.r, selectCam.color.g, selectCam.color.b, 1.0f);
-		} else {
-			selectDraw.color = new Color(selectDraw.color.r, selectDraw.color.g, selectDraw.color.b, 1.0f);
-			selectCam.color = new Color(selectCam.color.r, selectCam.color.g, selectCam.color.b, 0.1f);
-		}
-
 		//Muting frame selectors
-		if(!FlikittCore.isPlaying){
+		if(!FlikittCore.isPlaying && mode != "Edit"){
 			//Muting forward button event
 			if(!FlikittCore.getCurrentFrame().getHasPicture()){
 				Image forward = GameObject.Find("Forward").GetComponent<Image>();
@@ -248,7 +324,7 @@ public class UserInterface : MonoBehaviour
 				Image back = GameObject.Find("Back").GetComponent<Image>();
 				back.color = new Color(back.color.r, back.color.g, back.color.b, 0.1f);
 			}
-		} else {
+		} else if (FlikittCore.isPlaying && mode != "Edit") {
 			Image forward = GameObject.Find("Forward").GetComponent<Image>();
 			forward.color = new Color(forward.color.r, forward.color.g, forward.color.b, 0.1f);
 			Image back = GameObject.Find("Back").GetComponent<Image>();
@@ -277,10 +353,20 @@ public class UserInterface : MonoBehaviour
 				Image micButton = GameObject.Find("Microphone").GetComponent<Image>();
 				micButton.color = new Color(micButton.color.r, micButton.color.g, micButton.color.b, 1.0f);
 			}
-		} else {
+		} else if (mode != "Edit") {
 			if (FlikittCore.project.getAllFrames().Count < FlikittCore.currentFrame + 1){
 				Image forward = GameObject.Find("Forward").GetComponent<Image>();
 				forward.color = new Color(forward.color.r, forward.color.g, forward.color.b, 0.1f);
+			}
+		}
+
+		if(mode == "Edit"){
+			if(FlikittCore.isPlaying){
+				Image playButton = GameObject.Find("Play / Pause_Edit").GetComponent<Image>();
+				playButton.sprite = playing;
+			} else {
+				Image playButton = GameObject.Find("Play / Pause_Edit").GetComponent<Image>();
+				playButton.sprite = notPlaying;
 			}
 		}
 
@@ -342,19 +428,29 @@ public class UserInterface : MonoBehaviour
 				copyFrame.color = new Color(copyFrame.color.r, copyFrame.color.g, copyFrame.color.b, 0.1f);
 			}
 		} else if (FlikittCore.isPlaying){
-			copyFrame.color = new Color(copyFrame.color.r, copyFrame.color.g, copyFrame.color.b, 1.0f);
+			copyFrame.color = new Color(copyFrame.color.r, copyFrame.color.g, copyFrame.color.b, 0.1f);
 		}
 
 		if(FlikittCore.project.getAllFrames().Count == 1 && !FlikittCore.isPlaying){
 			trash.color = new Color(trash.color.r, trash.color.g, trash.color.b, 0.1f);
 		} else if (FlikittCore.isPlaying){
-			trash.color = new Color(trash.color.r, trash.color.g, trash.color.b, 1.0f);
+			trash.color = new Color(trash.color.r, trash.color.g, trash.color.b, 0.1f);
 		} else {
 			trash.color = new Color(trash.color.r, trash.color.g, trash.color.b, 1.0f);
 		}
 
 		mic.color = new Color(mic.color.r, mic.color.g, mic.color.b, 0.1f);
-		insert.color = new Color(insert.color.r, insert.color.g, insert.color.b, 0.1f);
+
+		if(!FlikittCore.isPlaying){
+			if(FlikittCore.getCurrentFrame().getHasPicture()){
+				insert.color = new Color(insert.color.r, insert.color.g, insert.color.b, 1.0f);
+			} else {
+				insert.color = new Color(insert.color.r, insert.color.g, insert.color.b, 0.1f);
+				SetMode("Capture");
+			}
+		} else {
+			insert.color = new Color(insert.color.r, insert.color.g, insert.color.b, 0.1f);
+		}
 
 		/*
 		MODE MANAGEMENT!
@@ -419,6 +515,20 @@ public class UserInterface : MonoBehaviour
 						break;
 
 					case "Play / Pause":
+
+						if(!FlikittCore.isPlaying){
+							if(canPlay){
+								FlikittCore.isPlaying = true;
+								FlikittCore.StartPlay();
+							}
+						} else {
+							FlikittCore.LoadPage(1);
+							FlikittCore.isPlaying = false;
+						}
+
+						break;
+
+					case "Play / Pause_Edit":
 
 						if(!FlikittCore.isPlaying){
 							if(canPlay){
@@ -520,16 +630,29 @@ public class UserInterface : MonoBehaviour
 						if(canProceed) { if(mode != "Drawing") { SetMode("Drawing"); } }
 						break;
 
+					case "SelectEdit":
+
+						bool canProceed2 = true;
+						for(int i = 0; i < FlikittCore.project.getAllFrames().Count; i++){
+							if(!FlikittCore.project.getFrame(i).getHasPicture()) canProceed2 = false;
+						}
+
+						if(canProceed2) { if(mode != "Edit") { SetMode("Edit"); } }
+						break;
+
+
 					case "Trash":
 
-					//...You can still delete frame one?!
-						if(!FlikittCore.isPlaying){
-							if(FlikittCore.project.getAllFrames().Count >= FlikittCore.currentFrame + 1){
-								FlikittCore.project.deleteFrame(FlikittCore.project.getFrame(FlikittCore.currentFrame - 1));
-								FlikittCore.LoadPage(FlikittCore.currentFrame);
-							} else if (FlikittCore.currentFrame == FlikittCore.project.getAllFrames().Count){
-								FlikittCore.project.deleteFrame(FlikittCore.project.getFrame(FlikittCore.currentFrame - 1));
-								FlikittCore.LoadPage(FlikittCore.currentFrame - 1);
+					//...You can still delete frame one?! Resolved?
+						if(FlikittCore.project.getAllFrames().Count != 1){
+							if(!FlikittCore.isPlaying){
+								if(FlikittCore.project.getAllFrames().Count >= FlikittCore.currentFrame + 1){
+									FlikittCore.project.deleteFrame(FlikittCore.project.getFrame(FlikittCore.currentFrame - 1));
+									FlikittCore.LoadPage(FlikittCore.currentFrame);
+								} else if (FlikittCore.currentFrame == FlikittCore.project.getAllFrames().Count){
+									FlikittCore.project.deleteFrame(FlikittCore.project.getFrame(FlikittCore.currentFrame - 1));
+									FlikittCore.LoadPage(FlikittCore.currentFrame - 1);
+								}
 							}
 						}
 						break;
@@ -544,6 +667,77 @@ public class UserInterface : MonoBehaviour
 						}
 						break;
 
+					case "Insert":
+
+						if(!FlikittCore.isPlaying && FlikittCore.getCurrentFrame().getHasPicture()){
+							if(FlikittCore.project.getAllFrames().Count == FlikittCore.currentFrame){
+								FlikittCore.NewPage();
+							} else {
+								print("Here");
+								FlikittCore.project.InsertFrame(FlikittCore.currentFrame);
+							}
+						}
+						break;
+
+					case "Switch Camera":
+						if(!FlikittCore.isPlaying)
+							CameraManager.SwitchCam();
+						break;
+
+					case "Continuous Shot Toggle":
+
+						if(!FlikittCore.isPlaying)
+							contShot.sprite = (contShot.sprite == contShotOff) ? contShotOn : contShotOff;
+						break;
+
+					case "CopyLength_Phase1":
+
+
+						if(!FlikittCore.isPlaying){
+							if(copyLength1.color == new Color(copyLength1.color.r, copyLength1.color.g, copyLength1.color.b, 1.0f)){
+								frameSelected1 = FlikittCore.currentFrame.ToString();
+								copyLength1.color = new Color(copyLength1.color.r, copyLength1.color.g, copyLength1.color.b, 0.1f);
+							}
+						}
+
+						break;
+
+					case "CopyLength_Phase2":
+
+						if(!FlikittCore.isPlaying){
+							if(copyLength2.color == new Color(copyLength2.color.r, copyLength2.color.g, copyLength2.color.b, 1.0f)){
+								frameSelected2 = FlikittCore.currentFrame.ToString();
+
+								if(frameSelected2 != "?"){
+									if(int.Parse(frameSelected2) > int.Parse(frameSelected1)){
+										FlikittCore.project.CopyLengthLines(int.Parse(frameSelected1), int.Parse(frameSelected2));
+										frameSelected1 = "?";
+										frameSelected2 = "?";
+									} else if (int.Parse(frameSelected2) == int.Parse(frameSelected1)){
+										frameSelected1 = "?";
+										frameSelected2 = "?";
+									}
+								}
+
+								copyLength2.color = new Color(copyLength2.color.r, copyLength2.color.g, copyLength2.color.b, 0.1f);
+								copyLength1.color = new Color(copyLength1.color.r, copyLength1.color.g, copyLength1.color.b, 1.0f);
+							}
+						}
+						break;
+
+					case "CopyPaste":
+
+						if(!FlikittCore.isPlaying){
+							if(copyPaste.sprite == copy){
+								frameToCopy = FlikittCore.currentFrame.ToString();
+								copyPaste.sprite = paste;
+							} else {
+								FlikittCore.project.CopyLines(FlikittCore.project.getFrame(int.Parse(frameToCopy) - 1));
+								frameToCopy = "?";
+							}
+						}
+
+						break;
 
 					default:
 						break;

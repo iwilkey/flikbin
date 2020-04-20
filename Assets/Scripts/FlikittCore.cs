@@ -61,6 +61,17 @@ public class Project : MonoBehaviour {
 		}
 	}
 
+	public void InsertFrame(int index){
+		for(int i = 0; i < frames.Count; i++){
+			if(i >= index){
+				frames[i].setName(i + 2);
+			}
+		}
+
+		frames.Insert(index, new Frame(index + 1));
+		fc.LoadPage(index + 1);
+	}
+
 	public void CopyLines(Frame frame){
 		int lineAmount = frame.getGOSelf().transform.childCount;
 		List<Color> lineColors = new List<Color>();
@@ -68,12 +79,16 @@ public class Project : MonoBehaviour {
 		List<List<Vector2>> linePoints = new List<List<Vector2>>();
 
 		for(int i = 0; i < lineAmount; i++){
-			lineColors.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<Line>().color);
+			lineColors.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().startColor);
 			lineThicknesses.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().startWidth);
 
 			List<Vector2> points = new List<Vector2>();
 			for(int p = 0; p < frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().positionCount; p++){
-				points.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().GetPosition(p));
+				Vector3 slight = new Vector3(0,0,0);
+				if(p % 5 == 0){
+					slight = new Vector3(Random.Range(-0.01f, 0.01f), Random.Range(-0.01f, 0.01f), 0);
+				}
+				points.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().GetPosition(p) + slight);
 			}
 			linePoints.Add(points);
 		}
@@ -82,9 +97,9 @@ public class Project : MonoBehaviour {
 			dm.currentLine++;
 			GameObject line = Instantiate(linePrefab);
 			line.name = "Line " + dm.currentLine;
+			line.GetComponent<Line>().color = lineColors[i];
 
 			LineRenderer renderer = line.GetComponent<LineRenderer>();
-
 			renderer.SetColors(lineColors[i], lineColors[i]);
 			renderer.SetWidth(lineThicknesses[i], lineThicknesses[i]);
 			renderer.positionCount = linePoints[i].Count;
@@ -97,29 +112,80 @@ public class Project : MonoBehaviour {
 		}
 	}
 
+	public void CopyLengthLines(int start, int end){
+		for(int i2 = 1; i2 < (end - start) + 1; i2++){
+			Frame frame = fc.project.getFrame(start + i2 - 2);
+
+			int lineAmount = frame.getGOSelf().transform.childCount;
+			List<Color> lineColors = new List<Color>();
+			List<float> lineThicknesses = new List<float>();
+			List<List<Vector2>> linePoints = new List<List<Vector2>>();
+
+			for(int i = 0; i < lineAmount; i++){
+				lineColors.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().startColor);
+				lineThicknesses.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().startWidth);
+
+				List<Vector2> points = new List<Vector2>();
+				for(int p = 0; p < frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().positionCount; p++){
+					Vector3 slight = new Vector3(0,0,0);
+					if(p % 5 == 0){
+						slight = new Vector3(Random.Range(-0.01f, 0.01f), Random.Range(-0.01f, 0.01f), 0);
+					}
+					points.Add(frame.getGOSelf().transform.GetChild(i).GetComponent<LineRenderer>().GetPosition(p) + slight);
+				}
+				linePoints.Add(points);
+			}
+
+			for(int i = 0; i < lineAmount; i++){
+				dm.currentLine++;
+				GameObject line = Instantiate(linePrefab);
+				line.name = "Line " + dm.currentLine;
+				line.GetComponent<Line>().color = lineColors[i];
+
+				LineRenderer renderer = line.GetComponent<LineRenderer>();
+				renderer.SetColors(lineColors[i], lineColors[i]);
+				renderer.SetWidth(lineThicknesses[i], lineThicknesses[i]);
+				renderer.positionCount = linePoints[i].Count;
+
+				for(int p = 0; p < renderer.positionCount; p++){
+					renderer.SetPosition(p, linePoints[i][p]);
+				}
+
+				line.transform.parent = fc.project.getFrame(start + i2 - 1).getGOSelf().transform;
+			}
+		}
+	}
+
 }
 
 public class Frame {
 
 	private string name;
+	private int number;
 	private bool enabled, hasPicture;
 	private GameObject goSelf;
 	private RawImage imageSelf;
+	private RectTransform rT = null;
+	CameraManager cm;
 
 	public Frame(int _number){
+		cm = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
+
 		name = "Frame " + _number;
+		number = _number;
 
 		goSelf = new GameObject(name, typeof(RectTransform));
 		goSelf.gameObject.tag = "Frame";
 		goSelf.transform.parent = GameObject.Find("Project").transform;
-		
-		RectTransform rT = goSelf.GetComponent<RectTransform>();
+	
+		rT = goSelf.GetComponent<RectTransform>();
 		rT.SetAnchor(AnchorPresets.StretchAll);
 		rT.SetTop((int)((Screen.height-Screen.width) / 2));
 		rT.SetBottom((int)((Screen.height-Screen.width) / 2));
 		rT.SetLeft((int)((Screen.width-Screen.height) / 2));
 		rT.SetRight((int)((Screen.width-Screen.height) / 2));
-		rT.localEulerAngles = new Vector3(0,0,-90);
+
+		rT.localEulerAngles = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
 		rT.localScale = new Vector3(1,1,1);
 
 		goSelf.AddComponent<RawImage>();
@@ -155,6 +221,7 @@ public class Frame {
 		}
 	}
 
+	public int getNumber(){return number;}
 	public void setName(int num) {
 		name = "Frame " + num;
 		goSelf.name = name;
@@ -173,6 +240,7 @@ public class Frame {
 			return;
 		}
 	}
+	public void setOrientation() {rT.localEulerAngles = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);}
 	public GameObject getGOSelf() {return goSelf;}
 }
 
@@ -281,6 +349,8 @@ public class FlikittCore : MonoBehaviour
 	}
 
 	private IEnumerator Shoot(){
+		//This seems to crash whenever I hold down the button for too long.
+		//It took about 14.13 s <------ (Half way)
 		if(isShooting){
 
 			CameraManager.Capture();

@@ -12,6 +12,7 @@ TagManager:
   - DrawingTools
   - EssentialUI
   - CaptureTools
+  - EditTools
   layers:
   - Default
   - TransparentFX

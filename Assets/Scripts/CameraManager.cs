@@ -13,6 +13,7 @@ public class CameraManager : MonoBehaviour
 	public RawImage camRender;
 	WebCamTexture webTex = null;
 	FlikittCore FlikittCore;
+	string camName = null;
 
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
@@ -26,7 +27,7 @@ public class CameraManager : MonoBehaviour
 		}
 
 		if(WebCamTexture.devices != null){
-			string camName = WebCamTexture.devices[0].name;
+			camName = WebCamTexture.devices[0].name;
 			webTex = new WebCamTexture(camName, Screen.width, Screen.height);
 
 			camRender.texture = webTex;
@@ -35,7 +36,12 @@ public class CameraManager : MonoBehaviour
 			camRender.rectTransform.SetBottom((int)((Screen.height-Screen.width) / 2));
 			camRender.rectTransform.SetLeft((int)((Screen.width-Screen.height) / 2));
 			camRender.rectTransform.SetRight((int)((Screen.width-Screen.height) / 2));
+
+
+				//For back facing camera.
 			camRender.rectTransform.localEulerAngles = new Vector3(0,0,-90);
+				//For Front Facing Camera.
+			//camRender.rectTransform.localEulerAngles = new Vector3(0,180,-270);
  	
 			if(webTex != null) webTex.Play();
 		}
@@ -71,5 +77,27 @@ public class CameraManager : MonoBehaviour
 	public void DeleteSpecificCapture(int index){
 		FlikittCore.project.getFrame(index).setPicture(null);
 		FlikittCore.project.getFrame(index).setHasPicture(false);
+	}
+
+	public WebCamTexture getWebTex(){
+		return webTex;
+	}
+
+	public void SwitchCam(){
+
+		for(int i = 0; i < WebCamTexture.devices.Length; i++){
+			Debug.Log(WebCamTexture.devices[i].name);
+		}
+
+		if(WebCamTexture.devices != null){
+			webTex.Stop();
+			webTex.deviceName = (webTex.deviceName == WebCamTexture.devices[0].name) ? WebCamTexture.devices[1].name : WebCamTexture.devices[0].name;
+			camRender.rectTransform.localEulerAngles = (webTex.deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
+			FlikittCore.getCurrentFrame().setOrientation();
+			webTex.Play();
+		} else {
+			Debug.Log("No cameras found!");
+			return;
+		}
 	}
 }

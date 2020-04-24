@@ -8,7 +8,7 @@ public class Project : MonoBehaviour {
 	FlikittCore fc;
 	private string name, type;
 	private List<Frame> frames;
-	private AudioClip audio;
+	private List<AudioClip> allAudio;
 	private float fps;
 	private GameObject linePrefab;
 
@@ -20,31 +20,47 @@ public class Project : MonoBehaviour {
 		type = _type;
 		linePrefab = _linePrefab;
 		frames = new List<Frame>();
-		audio = null;
+		allAudio = new List<AudioClip>();
 		fps = 7.5f;
 	}
 
 	//Loading an existing project
-	public Project(string _name, string _type, List<Frame> _frames, AudioClip _audio, float _fps){
+	public Project(string _name, string _type, List<Frame> _frames, List<AudioClip> _audio, float _fps){
+		dm = GameObject.Find("Drawing Manager").GetComponent<DrawingManager>();
+		fc = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
 		name = _name;
 		type = _type;
 		frames = _frames;
-		audio = _audio;
+		allAudio = _audio;
 		fps = _fps;
 	}
 
 	//Accessor
 	public string getName() {return name;}
 	public string getType() {return type;}
-	public AudioClip getAudio() {return audio;}
+	public AudioClip getAudio(int index) {return allAudio[index];}
+	public List<AudioClip> getAllAudio() {return allAudio;}
 	public float getFps() {return fps;}
 	public Frame getFrame(int number) {return frames[number];}
 	public List<Frame> getAllFrames() {return frames;}
 
 	//Mutator
 	public void addFrame(Frame frame) {frames.Add(frame);}
-	public void setAudio(AudioClip _audio) {audio = _audio;}
+	public void addAudio(AudioClip _audio) {allAudio.Add(_audio);}
+	public void removeAllAudio() {allAudio = new List<AudioClip>();}
 	public void setFps(float _fps) {fps = _fps;}
+	public bool checkCompletion(){
+		for(int i = 0; i < frames.Count; i++){
+			if(!frames[i].getHasPicture()) return false;
+		}
+		return true;
+	}
+	public bool checkAudioCompletion(){
+		for(int i = 0; i < allAudio.Count; i++){
+			if(allAudio[i] == null) return false;
+		}
+		return true;
+	}
 
 	public void deleteFrame(Frame frame){
 		for (int i = 0; i < frames.Count; i++){
@@ -155,10 +171,9 @@ public class Project : MonoBehaviour {
 			}
 		}
 	}
-
 }
 
-public class Frame {
+public class Frame : MonoBehaviour {
 
 	private string name;
 	private int number;
@@ -195,6 +210,34 @@ public class Frame {
 		enabled = true;
 	}
 
+	public Frame(int _number, RawImage _image){
+		cm = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
+
+		name = "Frame " + _number;
+		number = _number;
+
+		goSelf = new GameObject(name, typeof(RectTransform));
+		goSelf.gameObject.tag = "Frame";
+		goSelf.transform.parent = GameObject.Find("Project").transform;
+	
+		rT = goSelf.GetComponent<RectTransform>();
+		rT.SetAnchor(AnchorPresets.StretchAll);
+		rT.SetTop((int)((Screen.height-Screen.width) / 2));
+		rT.SetBottom((int)((Screen.height-Screen.width) / 2));
+		rT.SetLeft((int)((Screen.width-Screen.height) / 2));
+		rT.SetRight((int)((Screen.width-Screen.height) / 2));
+
+		rT.localEulerAngles = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
+		rT.localScale = new Vector3(1,1,1);
+
+		goSelf.AddComponent<RawImage>();
+		imageSelf = goSelf.GetComponent<RawImage>();
+		imageSelf = _image;
+
+		hasPicture = false;
+		enabled = true;
+	}
+
 	public void Enable(){
 		if(!enabled){
 			foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
@@ -221,15 +264,23 @@ public class Frame {
 		}
 	}
 
+	public GameObject getLine(int index){
+		if(index <= goSelf.transform.childCount - 1){
+			return goSelf.transform.GetChild(index).gameObject;
+		}
+		return null;
+	}
 	public int getNumber(){return number;}
 	public void setName(int num) {
 		name = "Frame " + num;
 		goSelf.name = name;
 	}
+	public RawImage getImage() {return imageSelf;}
 	public string getName() {return name;}
 	public bool getHasPicture(){return hasPicture;}
 	public void setHasPicture(bool p) {hasPicture = p;}
 	public void setPicture(Texture image) {imageSelf.texture = image;}
+	public Texture getPicture() {return imageSelf.texture;}
 	public bool isEnabled() {return enabled;}
 	public void setStatus(string status){
 		if(status == "On"){
@@ -249,24 +300,47 @@ public class FlikittCore : MonoBehaviour
 	public Project project;
 	public GameObject linePrefab;
 	CameraManager CameraManager;
+	MicrophoneManager MicrophoneManager;
+	SaveLoad SaveLoad;
 
 	public int currentFrame = 1;
-	public bool isPlaying, continuousShot, isShooting;
+	public bool isPlaying, continuousShot, isShooting, overdub;
 	public float spf;
 	public string drawMode;
 
 	void Start(){
 		CameraManager = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
+		MicrophoneManager = GameObject.Find("Microphone Manager").GetComponent<MicrophoneManager>();
+		SaveLoad = GameObject.Find("Easy Save 3 Manager").GetComponent<SaveLoad>();
 		//Use easysave to find out if a project is being loaded or not...
+		if(true){
+			StartLoad();
+		} else {
+			//If a new project
+			string name = "New project"; 
+			string type = "Frame-by-Frame";
+			project = new Project(name, type, linePrefab);
+			NewPage();
+			spf = 1 / project.getFps();
 
-		//If a new project
-		string name = "New project"; 
-		string type = "Frame-by-Frame";
-		project = new Project(name, type, linePrefab);
-		NewPage();
-		spf = 1 / project.getFps();
+			drawMode = "Pencil";
+		}
+	}
 
-		drawMode = "Pencil";
+	private IEnumerator load;
+	void StartLoad(){
+		load = LoadTime();
+		StartCoroutine(load);
+	}
+
+	private IEnumerator LoadTime(){
+		yield return new WaitForSeconds(0.01f);
+		project = SaveLoad.Load("Test!");
+		LoadPage(1);
+	}
+
+	public void setProject(Project proj){
+		project = proj;
 	}
 
 	void Update(){
@@ -302,7 +376,6 @@ public class FlikittCore : MonoBehaviour
 	}
 
 	public Frame getCurrentFrame(){
-
 		for(int i = 0; i <= project.getAllFrames().Count; i++){
 			if(project.getFrame(i).getName() == (string)("Frame " + currentFrame.ToString())){
 				return project.getFrame(i);
@@ -323,6 +396,16 @@ public class FlikittCore : MonoBehaviour
 	}
 
 	private IEnumerator Play(){
+
+		if(project.getAllAudio() != null){
+			if(project.getAllAudio().Count >= 1 && project.checkAudioCompletion()){
+				for(int a = 0; a < MicrophoneManager.getAllSources().Count; a++){
+					MicrophoneManager.getAllSources()[a].Stop();
+					MicrophoneManager.getAllSources()[a].Play();
+				}
+			}
+		}
+
 		for (int i = 1; i <= project.getAllFrames().Count; i++){
 			DisableAll();
 			EnableActive(i);
@@ -335,8 +418,19 @@ public class FlikittCore : MonoBehaviour
 			}
 		}
 		if(isPlaying){
-			StartPlay();
+			if(MicrophoneManager.currentlyRecording){
+				isPlaying = false;
+				LoadPage(1);
+				yield break;
+			} else {
+				StartPlay();
+			}
 		} else {
+			if(project.getAllAudio() != null){
+				for(int a = 0; a < MicrophoneManager.getAllSources().Count; a++){
+					MicrophoneManager.getAllSources()[a].Stop();
+				}
+			}
 			LoadPage(1);
 			yield break;
 		}

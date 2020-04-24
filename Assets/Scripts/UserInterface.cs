@@ -36,24 +36,30 @@ public class UserInterface : MonoBehaviour
 {
 	FlikittCore FlikittCore;
 	CameraManager CameraManager;
+	MicrophoneManager MicrophoneManager;
 	DrawingManager DrawingManager;
+	SaveLoad SaveLoad;
 	public bool canDraw, canPlay;
 	private List<ColorSwatch> colorSwatches = new List<ColorSwatch>();
 
 	//UI Vars
-	public Text frameCounter;
-	public Sprite cam, deletePic, notPlaying, playing, pencilOn, pencilOff, eraserOn, eraserOff, contShotOn, contShotOff, copy, paste;
-	public Image captureButton, pencil, eraser, selectCam, selectDraw, copyFrame, trash, mic, insert, contShot, selectEdit, copyLength1, copyLength2, copyPaste;
+	public Text frameCounter, trackCounter, currentTrackCounter;
+	public Sprite cam, deletePic, notPlaying, playing, pencilOn, pencilOff, eraserOn, eraserOff, contShotOn, contShotOff, copy, paste, micOn, micOff;
+	public Image captureButton, pencil, eraser, selectCam, selectDraw, copyFrame, trash, mic, insert, contShot, selectEdit, copyLength1, copyLength2, copyPaste, overdub, WAVEFORM;
 	public Slider fpsSlider, thicknessSlider, frameScrubber;
 
 	public string mode;
+
+	public AudioClip silence;
 
 	private string frameSelected1 = "?"; private string frameSelected2 = "?"; private string frameToCopy = "?";
 
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
 		CameraManager = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
+		MicrophoneManager = GameObject.Find("Microphone Manager").GetComponent<MicrophoneManager>();
 		DrawingManager = GameObject.Find("Drawing Manager").GetComponent<DrawingManager>();
+		SaveLoad = GameObject.Find("Easy Save 3 Manager").GetComponent<SaveLoad>();
 
 		fpsSlider.maxValue = 15.0f; fpsSlider.minValue = 0.5f;
 
@@ -70,6 +76,7 @@ public class UserInterface : MonoBehaviour
 
 		contShot.sprite = contShotOff;
 		copyLength1.color = new Color(copyLength1.color.r, copyLength1.color.g, copyLength1.color.b, 1.0f);
+		overdub.sprite = contShotOff;
 	}
 
 	void DisableAllSwatches(){
@@ -163,6 +170,21 @@ public class UserInterface : MonoBehaviour
 		DrawingManager.width = thicknessSlider.value;
 
 		frameCounter.text = cframe + " / " + projlength;
+		trackCounter.text = MicrophoneManager.currentTrack.ToString();
+
+		if(MicrophoneManager.hasRecording){
+			fpsSlider.interactable = false;
+		} else {
+			fpsSlider.interactable = true;
+		}
+
+		if(mode == "Edit"){
+			if(!MicrophoneManager.hasRecording){
+				WAVEFORM.color = new Color(WAVEFORM.color.r, WAVEFORM.color.g, WAVEFORM.color.b, 0.0f);
+			} else {
+				WAVEFORM.color = new Color(WAVEFORM.color.r, WAVEFORM.color.g, WAVEFORM.color.b, 1.0f);
+			}
+		}
 
 		if(!FlikittCore.isPlaying){
 			if(frameSelected1 == "?"){
@@ -237,6 +259,12 @@ public class UserInterface : MonoBehaviour
 			FlikittCore.continuousShot = true;
 		} else {
 			FlikittCore.continuousShot = false;
+		}
+
+		if(overdub.sprite == contShotOn){
+			FlikittCore.overdub = true;
+		} else {
+			FlikittCore.overdub = false;
 		}
 
 		//If frame one, or some frame doesn't have a picture on it
@@ -439,8 +467,6 @@ public class UserInterface : MonoBehaviour
 			trash.color = new Color(trash.color.r, trash.color.g, trash.color.b, 1.0f);
 		}
 
-		mic.color = new Color(mic.color.r, mic.color.g, mic.color.b, 0.1f);
-
 		if(!FlikittCore.isPlaying){
 			if(FlikittCore.getCurrentFrame().getHasPicture()){
 				insert.color = new Color(insert.color.r, insert.color.g, insert.color.b, 1.0f);
@@ -450,6 +476,33 @@ public class UserInterface : MonoBehaviour
 			}
 		} else {
 			insert.color = new Color(insert.color.r, insert.color.g, insert.color.b, 0.1f);
+		}
+
+		if(MicrophoneManager.currentlyRecording){
+			mic.sprite = micOn;
+			if(Input.touchCount == 0){
+				MicrophoneManager.StopRecording();
+				if(MicrophoneManager.currentTrack >= 1){
+					WAVEFORM.GetComponent<DrawWaveform>().GenerateWaveformImage(FlikittCore.project.getAllAudio()[0]);
+				}
+			}
+		} else {
+			mic.sprite = micOff;
+		}
+
+		if(FlikittCore.isPlaying && !MicrophoneManager.currentlyRecording){
+			mic.sprite = micOff;
+			mic.color = new Color(mic.color.r, mic.color.g, mic.color.b, 0.1f);
+		} else if (FlikittCore.isPlaying && MicrophoneManager.currentlyRecording){
+			mic.sprite = micOn;
+			mic.color = new Color(mic.color.r, mic.color.g, mic.color.b, 1.0f);
+		} else {
+			if(FlikittCore.project.checkCompletion()){
+				mic.sprite = micOff;
+				mic.color = new Color(mic.color.r, mic.color.g, mic.color.b, 1.0f);
+			} else {
+				mic.color = new Color(mic.color.r, mic.color.g, mic.color.b, 0.1f);
+			}
 		}
 
 		/*
@@ -512,6 +565,23 @@ public class UserInterface : MonoBehaviour
 							}
 						}
 
+						break;
+
+					case "Microphone":
+
+						if(!FlikittCore.isPlaying){
+							if(!MicrophoneManager.currentlyRecording){
+								if(FlikittCore.project.checkCompletion()){
+									FlikittCore.isPlaying = true;
+									FlikittCore.StartPlay();
+									if(FlikittCore.overdub){
+										MicrophoneManager.StartRecordingOverdub();
+									} else {
+										MicrophoneManager.StartRecordingNoOverdub();
+									}
+								}
+							}
+						}
 						break;
 
 					case "Play / Pause":
@@ -690,6 +760,12 @@ public class UserInterface : MonoBehaviour
 							contShot.sprite = (contShot.sprite == contShotOff) ? contShotOn : contShotOff;
 						break;
 
+					case "Overdub Toggle":
+
+						if(!FlikittCore.isPlaying)
+							overdub.sprite = (overdub.sprite == contShotOff) ? contShotOn : contShotOff;
+						break;
+
 					case "CopyLength_Phase1":
 
 
@@ -738,6 +814,35 @@ public class UserInterface : MonoBehaviour
 						}
 
 						break;
+
+					case "Select Track":
+
+						if(FlikittCore.project.getAllAudio() != null){
+
+							DrawWaveform dw = WAVEFORM.GetComponent<DrawWaveform>();
+							int maxSize = FlikittCore.project.getAllAudio().Count;
+
+							if(dw.currentTrack + 1 > maxSize){
+								dw.currentTrack = 1;
+							} else {
+								dw.currentTrack++;
+							}
+
+							AudioClip toBeDrawn = FlikittCore.project.getAllAudio()[dw.currentTrack - 1];
+							dw.GenerateWaveformImage(toBeDrawn);
+
+							currentTrackCounter.text = dw.currentTrack.ToString();
+
+						}
+
+						break;
+
+					case "Save and Quit":
+
+						Debug.Log("Saving!");
+						SaveLoad.Save(FlikittCore.project.getName());
+						break;
+
 
 					default:
 						break;

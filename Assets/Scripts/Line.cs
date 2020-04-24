@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -9,7 +9,6 @@ public class Line : MonoBehaviour
 	DrawingManager dm;
 
 	public LineRenderer renderer;
-	public EdgeCollider2D edgeCol;
 	List<Vector2> points;
 
 	public Color color;

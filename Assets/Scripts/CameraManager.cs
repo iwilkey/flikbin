@@ -18,7 +18,7 @@ public class CameraManager : MonoBehaviour
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
 
-		//ANDROID STARTS HERE
+		//Android Permissions
 		#if PLATFORM_ANDROID
 		if(!Permission.HasUserAuthorizedPermission(Permission.Camera)){
 			do {
@@ -29,7 +29,7 @@ public class CameraManager : MonoBehaviour
 		if(WebCamTexture.devices != null){
 			camName = WebCamTexture.devices[0].name;
 			webTex = new WebCamTexture(camName, Screen.width, Screen.height);
-
+	
 			camRender.texture = webTex;
 			camRender.material.mainTexture = webTex;
 			camRender.rectTransform.SetTop((int)((Screen.height-Screen.width) / 2));

@@ -459,11 +459,8 @@ namespace ES3PlayMaker
 		{
 			exists.Value = ES3.KeyExists(key.Value, GetSettings());
 
-			if(exists.Value && existsEvent != null)
-				Fsm.Event(existsEvent);
-			else if(doesNotExistEvent != null)
-				Fsm.Event(doesNotExistEvent);
-		}
+            Fsm.Event(exists.Value ? existsEvent : doesNotExistEvent);
+        }
 	}
 
 	[ActionCategory("Easy Save 3")]
@@ -492,11 +489,8 @@ namespace ES3PlayMaker
 		{
 			exists.Value = ES3.FileExists(filePath.Value, GetSettings());
 
-			if(exists.Value && existsEvent != null)
-				Fsm.Event(existsEvent);
-			else if(doesNotExistEvent != null)
-				Fsm.Event(doesNotExistEvent);
-		}
+            Fsm.Event(exists.Value ? existsEvent : doesNotExistEvent);
+        }
 	}
 
 	[ActionCategory("Easy Save 3")]
@@ -525,11 +519,8 @@ namespace ES3PlayMaker
 		{
 			exists.Value = ES3.DirectoryExists(directoryPath.Value, GetSettings());
 
-			if(exists.Value && existsEvent != null)
-				Fsm.Event(existsEvent);
-			else if(doesNotExistEvent != null)
-				Fsm.Event(doesNotExistEvent);
-		}
+            Fsm.Event(exists.Value ? existsEvent : doesNotExistEvent);
+        }
 	}
 
 	#endregion
@@ -1253,18 +1244,40 @@ namespace ES3PlayMaker
 		}
 	}
 
-	[ActionCategory("Easy Save 3")]
+    [ActionCategory("Easy Save 3")]
+    [Tooltip("Uploads a file in storage to the server, overwriting any existing files.")]
+    public class ES3CloudUploadES3File : ES3CloudUserAction
+    {
+        public override void Enter()
+        {
+            var settings = GetSettings();
+            StartCoroutine(cloud.UploadFile(es3File, user.Value, password.Value));
+        }
+    }
+
+    [ActionCategory("Easy Save 3")]
 	[Tooltip("Downloads a file from the server, overwriting any existing files, or returning error code 3 if no file exists on the server.")]
-	public class ES3CloudDownloadFile : ES3CloudUserAction
+	public class ES3CloudDownloadES3File : ES3CloudUserAction
 	{
 		public override void Enter()
 		{
 			var settings = GetSettings();
-			StartCoroutine(cloud.DownloadFile(path.Value, user.Value, password.Value, settings));
+			StartCoroutine(cloud.DownloadFile(es3File, user.Value, password.Value));
 		}
 	}
 
-	[ActionCategory("Easy Save 3")]
+    [ActionCategory("Easy Save 3")]
+    [Tooltip("Downloads a file from the server into an ES3File, or returning error code 3 if no file exists on the server.")]
+    public class ES3CloudDownloadFile : ES3CloudUserAction
+    {
+        public override void Enter()
+        {
+            var settings = GetSettings();
+            StartCoroutine(cloud.DownloadFile(path.Value, user.Value, password.Value, settings));
+        }
+    }
+
+    [ActionCategory("Easy Save 3")]
 	[Tooltip("Downloads a file from the server, overwriting any existing files, or returning error code 3 if no file exists on the server.")]
 	public class ES3CloudDeleteFile : ES3CloudUserAction
 	{
@@ -1297,14 +1310,18 @@ namespace ES3PlayMaker
 		[ArrayEditor(VariableType.String)]
 		public FsmArray filenames;
 
-		public override void OnReset()
+        [Tooltip("An optional search pattern containing '%' or '_' wildcards where '%' represents zero, one, or multiple characters, and '_' represents a single character. See https://www.w3schools.com/sql/sql_like.asp for more info.")]
+        public FsmString searchPattern;
+
+        public override void OnReset()
 		{
 			filenames = null;
+            searchPattern = "";
 		}
 
 		public override void Enter()
 		{
-			StartCoroutine(cloud.DownloadFilenames(user.Value, password.Value));
+			StartCoroutine(cloud.DownloadFilenames(user.Value, password.Value, searchPattern.Value));
 		}
 
 		public override void OnUpdate()

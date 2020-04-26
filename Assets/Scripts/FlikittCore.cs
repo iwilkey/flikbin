@@ -308,16 +308,28 @@ public class FlikittCore : MonoBehaviour
 	public float spf;
 	public string drawMode;
 
+	private string workBoard;
+	private List<string> existingProjects = new List<string>();
+
 	void Start(){
 		CameraManager = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
 		MicrophoneManager = GameObject.Find("Microphone Manager").GetComponent<MicrophoneManager>();
 		SaveLoad = GameObject.Find("Easy Save 3 Manager").GetComponent<SaveLoad>();
 		//Use easysave to find out if a project is being loaded or not...
-		if(true){
-			StartLoad();
+
+		if(ES3.KeyExists("Work Board")){
+			workBoard = ES3.Load<string>("Work Board");
+		} else {
+			workBoard = "New Project";
+		}
+
+		existingProjects = ES3.Load<List<string>>("Existing Projects");
+
+		if(checkExistance(workBoard)){
+			StartLoad(workBoard);
 		} else {
 			//If a new project
-			string name = "New project"; 
+			string name = workBoard;
 			string type = "Frame-by-Frame";
 			project = new Project(name, type, linePrefab);
 			NewPage();
@@ -327,15 +339,23 @@ public class FlikittCore : MonoBehaviour
 		}
 	}
 
+	public bool checkExistance(string name){
+		for(int i = 0; i < existingProjects.Count; i++){
+			if(existingProjects[i] == name) return true;
+		}
+
+		return false;
+	}
+
 	private IEnumerator load;
-	void StartLoad(){
-		load = LoadTime();
+	void StartLoad(string name){
+		load = LoadTime(name);
 		StartCoroutine(load);
 	}
 
-	private IEnumerator LoadTime(){
-		yield return new WaitForSeconds(0.01f);
-		project = SaveLoad.Load("Test!");
+	private IEnumerator LoadTime(string name){
+		yield return new WaitForSeconds(0.008f);
+		project = SaveLoad.Load(name);
 		LoadPage(1);
 	}
 

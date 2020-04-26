@@ -1,0 +1,10 @@
+Final bug fixes for flikitt!
+
+- Fix the rotation of the sprite when it grabs a thumbnail.
+- Try and fix the rotation of how a frame is made when loading a project based off of the way it was taken (front face or back)
+- See what you can do about the thumbnail not showing up after editor
+
+Final addition:
+- Make an exporting feature! See what you can do about Android. But apple, still good with API.
+
+Then ready for 2.0.0 release!

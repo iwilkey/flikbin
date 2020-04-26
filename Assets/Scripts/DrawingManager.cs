@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -55,7 +55,7 @@ public class DrawingManager : MonoBehaviour
 			Vector2 touchPos = touch.position;
 			touchPos = Camera.main.ScreenToWorldPoint(touchPos);
 			activeLine.UpdateLine(touchPos);
-		}
+		} 
 	}
 
 	void LineAttributor(){

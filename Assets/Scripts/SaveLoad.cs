@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class SaveLoad : MonoBehaviour
 {
@@ -9,14 +10,28 @@ public class SaveLoad : MonoBehaviour
 	DrawingManager DrawingManager;
 	UserInterface UserInterface;
 	public GameObject linePrefab;
+	private List<string> existingProjects;
 
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
 		DrawingManager = GameObject.Find("Drawing Manager").GetComponent<DrawingManager>();
 		UserInterface = GameObject.Find("User Interface").GetComponent<UserInterface>();
+
+		if(!ES3.KeyExists("Existing Projects")){
+			existingProjects = new List<string>();
+			ES3.Save<List<string>>("Existing Projects", existingProjects);
+		} else {
+			existingProjects = ES3.Load<List<string>>("Existing Projects");
+		}
 	}
 
 	public void Save(string name) {
+
+		existingProjects = ES3.Load<List<string>>("Existing Projects");
+		if(!FlikittCore.checkExistance(name)){
+			existingProjects.Add(name);
+			ES3.Save<List<string>>("Existing Projects", existingProjects);
+		}
 
 		string find = "Project " + name;
 
@@ -65,6 +80,7 @@ public class SaveLoad : MonoBehaviour
 				ES3.Save<List<Vector3>>("Project " + name + " " + frmname + " " + frameT.GetChild(i).gameObject.name + " Points", points);
 			}
 			ES3.Save<List<string>>("Project " + name + " " + frmname + " Line names", lineNames);
+
 		}
 
 		//Save Audio, if there is audio, of course.
@@ -140,28 +156,39 @@ public class SaveLoad : MonoBehaviour
 
 			//Load Audio
 			List<AudioClip> audio = new List<AudioClip>();
-			int trackCount = ES3.Load<int>("Project " + name + " Track Amount");
-			if(ES3.KeyExists("Project " + name + " Track 1")){
-				for(int i = 1; i <= trackCount; i++){
-					string n = ("Project " + name + " Track " + i);
-					AudioClip clip = ES3.Load<AudioClip>(n);
-					audio.Add(clip);
+			if(ES3.KeyExists("Project " + name + " Track Amount")){
+				int trackCount = ES3.Load<int>("Project " + name + " Track Amount");
+				if(ES3.KeyExists("Project " + name + " Track 1")){
+					for(int i = 1; i <= trackCount; i++){
+						string n = ("Project " + name + " Track " + i);
+						AudioClip clip = ES3.Load<AudioClip>(n);
+						audio.Add(clip);
+					}
+				} else {
+					audio = null;
 				}
-			} else {
-				audio = null;
 			}
 
 			//Load fps
 			float fps = ES3.Load<float>(name + " fps");
 
-			Project project = new Project(name, "Frame-by-frame", frames, audio, fps);
-			FlikittCore.project = project;
-			UserInterface.fpsSlider.value = fps;
+			if(ES3.KeyExists("Project " + name + " Track Amount")){
+				Project project = new Project(name, "Frame-by-frame", frames, audio, fps);
+				FlikittCore.project = project;
+				UserInterface.fpsSlider.value = fps;
+				return project;
+			} else {
+				Project project = new Project(name, "Frame-by-frame", frames, null, fps);
+				FlikittCore.project = project;
+				UserInterface.fpsSlider.value = fps;
+				return project;
+			}
 
-			return project;
+			return null;
 			
 		} else {
 			Debug.Log("Did not find project name!");
+			SceneManager.LoadScene("Splash Screen");
 			return null;
 		}
 	}

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class ColorSwatch {
 	private string name;
@@ -39,6 +40,10 @@ public class UserInterface : MonoBehaviour
 	MicrophoneManager MicrophoneManager;
 	DrawingManager DrawingManager;
 	SaveLoad SaveLoad;
+
+	public Image fadeIn;
+	private float t = 1;
+
 	public bool canDraw, canPlay;
 	private List<ColorSwatch> colorSwatches = new List<ColorSwatch>();
 
@@ -77,6 +82,7 @@ public class UserInterface : MonoBehaviour
 		contShot.sprite = contShotOff;
 		copyLength1.color = new Color(copyLength1.color.r, copyLength1.color.g, copyLength1.color.b, 1.0f);
 		overdub.sprite = contShotOff;
+		fadeIn.color = new Color(fadeIn.color.r, fadeIn.color.g, fadeIn.color.b, 1.0f);
 	}
 
 	void DisableAllSwatches(){
@@ -162,6 +168,16 @@ public class UserInterface : MonoBehaviour
 	}
 
 	void Update(){
+
+		if(t > 0.0f){
+			t -= 0.01f;
+			fadeIn.color = new Color(fadeIn.color.r, fadeIn.color.g, fadeIn.color.b, t);	
+		} else {
+			if(GameObject.Find("FadeIn") != null){
+				GameObject.Find("FadeIn").SetActive(false);
+			}
+		}
+
 
 		int cframe = FlikittCore.currentFrame;
 		int projlength = FlikittCore.project.getAllFrames().Count;
@@ -838,9 +854,13 @@ public class UserInterface : MonoBehaviour
 						break;
 
 					case "Save and Quit":
-
-						Debug.Log("Saving!");
-						SaveLoad.Save(FlikittCore.project.getName());
+						if(!FlikittCore.isPlaying){
+							if(FlikittCore.project.checkCompletion()){
+								SaveLoad.Save(FlikittCore.project.getName());
+								CameraManager.getWebTex().Stop();
+								SceneManager.LoadScene("Splash Screen");
+							}
+						}
 						break;
 
 

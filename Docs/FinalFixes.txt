@@ -1,11 +1,15 @@
 Final bug fixes for flikitt!
 
 - Create a working checkLegality function!
+- Perhaps just take a screen shot of the screen save THAT and use it for the thumbnail.
+- For some reason, when I deleted all frames in one project, the first original frame persisted when I loaded in... check on that.
 - Fix the rotation of the sprite when it grabs a thumbnail.
 - Try and fix the rotation of how a frame is made when loading a project based off of the way it was taken (front face or back)
 - See what you can do about the thumbnail not showing up after editor
+- Fix the audio track thing. The number is wrong for the first edit mode toggle.
 
-Final addition:
+Final additions:
 - Make an exporting feature! See what you can do about Android. But apple, still good with API.
+- Make a way for images to turn off and you can set the background color (maybe)
 
 Then ready for 2.0.0 release!

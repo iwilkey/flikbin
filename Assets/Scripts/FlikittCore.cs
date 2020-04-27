@@ -302,6 +302,7 @@ public class FlikittCore : MonoBehaviour
 	CameraManager CameraManager;
 	MicrophoneManager MicrophoneManager;
 	SaveLoad SaveLoad;
+	ShareManager ShareManager;
 
 	public int currentFrame = 1;
 	public bool isPlaying, continuousShot, isShooting, overdub;
@@ -315,6 +316,7 @@ public class FlikittCore : MonoBehaviour
 		CameraManager = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
 		MicrophoneManager = GameObject.Find("Microphone Manager").GetComponent<MicrophoneManager>();
 		SaveLoad = GameObject.Find("Easy Save 3 Manager").GetComponent<SaveLoad>();
+		ShareManager = GameObject.Find("Share Manager").GetComponent<ShareManager>();
 		//Use easysave to find out if a project is being loaded or not...
 
 		if(ES3.KeyExists("Work Board")){
@@ -323,7 +325,11 @@ public class FlikittCore : MonoBehaviour
 			workBoard = "New Project";
 		}
 
-		existingProjects = ES3.Load<List<string>>("Existing Projects");
+		if(ES3.KeyExists("Existing Projects")){
+			existingProjects = ES3.Load<List<string>>("Existing Projects");
+		} else {
+			existingProjects = new List<string>();
+		}
 
 		if(checkExistance(workBoard)){
 			StartLoad(workBoard);
@@ -455,6 +461,44 @@ public class FlikittCore : MonoBehaviour
 			yield break;
 		}
 	}
+
+	private IEnumerator rec;
+	public void StartRecPlay(){
+		if(project.getAllFrames().Count > 1){
+			LoadPage(1);
+			rec = RecPlay();
+			StartCoroutine(rec);
+		} else {
+			return;
+		}
+	}
+
+	private IEnumerator RecPlay(){
+
+		if(project.getAllAudio() != null){
+			if(project.getAllAudio().Count >= 1 && project.checkAudioCompletion()){
+				for(int a = 0; a < MicrophoneManager.getAllSources().Count; a++){
+					MicrophoneManager.getAllSources()[a].Stop();
+					MicrophoneManager.getAllSources()[a].Play();
+				}
+			}
+		}
+
+		for (int i = 1; i <= project.getAllFrames().Count; i++){
+			DisableAll();
+			EnableActive(i);
+			currentFrame = i;
+
+			yield return new WaitForSeconds(spf);
+		}
+		
+
+		ShareManager.StopRecording();
+		LoadPage(1);
+		yield break;
+	}
+
+
 
 	private IEnumerator contShotCoroutine;
 	public void StartShot(){

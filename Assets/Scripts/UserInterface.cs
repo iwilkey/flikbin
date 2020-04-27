@@ -40,11 +40,12 @@ public class UserInterface : MonoBehaviour
 	MicrophoneManager MicrophoneManager;
 	DrawingManager DrawingManager;
 	SaveLoad SaveLoad;
+	ShareManager ShareManager;
 
 	public Image fadeIn;
 	private float t = 1;
 
-	public bool canDraw, canPlay;
+	public bool canDraw, canPlay, screenshot;
 	private List<ColorSwatch> colorSwatches = new List<ColorSwatch>();
 
 	//UI Vars
@@ -65,6 +66,8 @@ public class UserInterface : MonoBehaviour
 		MicrophoneManager = GameObject.Find("Microphone Manager").GetComponent<MicrophoneManager>();
 		DrawingManager = GameObject.Find("Drawing Manager").GetComponent<DrawingManager>();
 		SaveLoad = GameObject.Find("Easy Save 3 Manager").GetComponent<SaveLoad>();
+		ShareManager = GameObject.Find("Share Manager").GetComponent<ShareManager>();
+
 
 		fpsSlider.maxValue = 15.0f; fpsSlider.minValue = 0.5f;
 
@@ -108,9 +111,12 @@ public class UserInterface : MonoBehaviour
 		 	}
 		 }
 
-		foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
-			if(obj.gameObject.CompareTag("EssentialUI")){
-				obj.gameObject.SetActive(true);
+		if(_mode != "Recording"){ 
+
+			foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+				if(obj.gameObject.CompareTag("EssentialUI")){
+					obj.gameObject.SetActive(true);
+				}
 			}
 		}
 
@@ -162,6 +168,12 @@ public class UserInterface : MonoBehaviour
 							obj.GetChild(i).GetChild(p).gameObject.SetActive(true);
 						}
 					}
+				}
+			}
+		} else if (_mode == "Recording"){
+			foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+				if(obj.gameObject.CompareTag("Watermark")){
+					obj.gameObject.SetActive(true);
 				}
 			}
 		}
@@ -345,7 +357,7 @@ public class UserInterface : MonoBehaviour
 		}
 
 		//Muting frame selectors
-		if(!FlikittCore.isPlaying && mode != "Edit"){
+		if(!FlikittCore.isPlaying && mode != "Edit" && mode != "Recording"){
 			//Muting forward button event
 			if(!FlikittCore.getCurrentFrame().getHasPicture()){
 				Image forward = GameObject.Find("Forward").GetComponent<Image>();
@@ -397,7 +409,7 @@ public class UserInterface : MonoBehaviour
 				Image micButton = GameObject.Find("Microphone").GetComponent<Image>();
 				micButton.color = new Color(micButton.color.r, micButton.color.g, micButton.color.b, 1.0f);
 			}
-		} else if (mode != "Edit") {
+		} else if (mode != "Edit" && mode != "Recording") {
 			if (FlikittCore.project.getAllFrames().Count < FlikittCore.currentFrame + 1){
 				Image forward = GameObject.Find("Forward").GetComponent<Image>();
 				forward.color = new Color(forward.color.r, forward.color.g, forward.color.b, 0.1f);
@@ -856,9 +868,24 @@ public class UserInterface : MonoBehaviour
 					case "Save and Quit":
 						if(!FlikittCore.isPlaying){
 							if(FlikittCore.project.checkCompletion()){
+
+								//Take a screenshot for thumbnail
+								SetMode("Recording");
+								ScreenCapture.CaptureScreenshot(Application.persistentDataPath + "/Project " + FlikittCore.project.getName() + " thumbnail.jpg", 1);
+
 								SaveLoad.Save(FlikittCore.project.getName());
 								CameraManager.getWebTex().Stop();
 								SceneManager.LoadScene("Splash Screen");
+							}
+						}
+						break;
+
+					case "Share":
+
+						if(!FlikittCore.isPlaying){
+							if(FlikittCore.project.checkCompletion()){
+								SaveLoad.Save(FlikittCore.project.getName());
+								ShareManager.StartRecording();
 							}
 						}
 						break;

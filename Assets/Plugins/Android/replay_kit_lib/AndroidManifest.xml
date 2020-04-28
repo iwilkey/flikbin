@@ -4,10 +4,10 @@
   <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="28" />
   <application>
     <!--Custom File Provider. Sharing from internal folders-->
-    <provider android:name="com.voxelbusters.replaykit.extensions.FileProviderExtended" android:authorities="com.IanWilkey.Flikitt.replaykit.fileprovider" android:exported="false" android:grantUriPermissions="true">
+    <provider android:name="com.voxelbusters.replaykit.extensions.FileProviderExtended" android:authorities="com.IanWilkey.Flik.replaykit.fileprovider" android:exported="false" android:grantUriPermissions="true">
       <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/replay_kit_file_paths" />
     </provider>
-    <service android:name="com.voxelbusters.replaykit.internal.ScreenRecordingService" android:enabled="true" />
+    <service android:name="com.voxelbusters.replaykit.internal.ScreenRecordingService" android:enabled="true" android:foregroundServiceType="mediaProjection" />
   </application>
   <!--Permissions-->
   <!--Required for recording audio-->

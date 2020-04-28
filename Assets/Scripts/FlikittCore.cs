@@ -29,6 +29,7 @@ public class Project : MonoBehaviour {
 		dm = GameObject.Find("Drawing Manager").GetComponent<DrawingManager>();
 		fc = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
 		name = _name;
+
 		type = _type;
 		frames = _frames;
 		allAudio = _audio;
@@ -48,6 +49,9 @@ public class Project : MonoBehaviour {
 	public void addFrame(Frame frame) {frames.Add(frame);}
 	public void addAudio(AudioClip _audio) {allAudio.Add(_audio);}
 	public void removeAllAudio() {allAudio = new List<AudioClip>();}
+	public void removeAudio(int index) {
+		allAudio.RemoveAt(index);
+	}
 	public void setFps(float _fps) {fps = _fps;}
 	public bool checkCompletion(){
 		for(int i = 0; i < frames.Count; i++){
@@ -128,6 +132,16 @@ public class Project : MonoBehaviour {
 		}
 	}
 
+	public void allImageTransparency(float t){
+		foreach(var frame in frames){
+			frame.setTransparency(t);
+		}
+	}
+
+	public void imageTransparency(Frame frame, float t){
+		frame.setTransparency(t);
+	}
+
 	public void CopyLengthLines(int start, int end){
 		for(int i2 = 1; i2 < (end - start) + 1; i2++){
 			Frame frame = fc.project.getFrame(start + i2 - 2);
@@ -176,6 +190,8 @@ public class Project : MonoBehaviour {
 public class Frame : MonoBehaviour {
 
 	private string name;
+	private string orientation;
+	private float transparency;
 	private int number;
 	private bool enabled, hasPicture;
 	private GameObject goSelf;
@@ -201,10 +217,12 @@ public class Frame : MonoBehaviour {
 		rT.SetRight((int)((Screen.width-Screen.height) / 2));
 
 		rT.localEulerAngles = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
+		orientation = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? "Back Facing" : "Front Facing";
 		rT.localScale = new Vector3(1,1,1);
 
 		goSelf.AddComponent<RawImage>();
 		imageSelf = goSelf.GetComponent<RawImage>();
+		transparency = 1.0f;
 
 		hasPicture = false;
 		enabled = true;
@@ -233,6 +251,7 @@ public class Frame : MonoBehaviour {
 		goSelf.AddComponent<RawImage>();
 		imageSelf = goSelf.GetComponent<RawImage>();
 		imageSelf = _image;
+		transparency = 1.0f;
 
 		hasPicture = false;
 		enabled = true;
@@ -276,6 +295,12 @@ public class Frame : MonoBehaviour {
 		goSelf.name = name;
 	}
 	public RawImage getImage() {return imageSelf;}
+	public string getOrientation() {return orientation;}
+	public float getTransparency() {return transparency;}
+	public void setTransparency(float t) {
+		transparency = t;
+		imageSelf.color = new Color(imageSelf.color.r, imageSelf.color.g, imageSelf.color.b, t);
+	}
 	public string getName() {return name;}
 	public bool getHasPicture(){return hasPicture;}
 	public void setHasPicture(bool p) {hasPicture = p;}
@@ -291,7 +316,14 @@ public class Frame : MonoBehaviour {
 			return;
 		}
 	}
-	public void setOrientation() {rT.localEulerAngles = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);}
+	public void setOrientation() {
+		rT.localEulerAngles = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
+		orientation = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? "Back Facing" : "Front Facing";
+	}
+	public void overrideOrientation(string ori){
+		rT.localEulerAngles = (ori == "Back Facing") ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
+		orientation = (ori == "Back Facing") ? "Back Facing" : "Front Facing";
+	}
 	public GameObject getGOSelf() {return goSelf;}
 }
 
@@ -497,7 +529,6 @@ public class FlikittCore : MonoBehaviour
 		LoadPage(1);
 		yield break;
 	}
-
 
 
 	private IEnumerator contShotCoroutine;

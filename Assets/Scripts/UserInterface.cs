@@ -59,7 +59,6 @@ public class UserInterface : MonoBehaviour
 	public AudioClip silence;
 
 	private string frameSelected1 = "?"; private string frameSelected2 = "?"; private string frameToCopy = "?";
-
 	void Start(){
 		FlikittCore = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
 		CameraManager = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
@@ -86,7 +85,13 @@ public class UserInterface : MonoBehaviour
 		copyLength1.color = new Color(copyLength1.color.r, copyLength1.color.g, copyLength1.color.b, 1.0f);
 		overdub.sprite = contShotOff;
 		fadeIn.color = new Color(fadeIn.color.r, fadeIn.color.g, fadeIn.color.b, 1.0f);
-	}
+
+		foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+			if(obj.gameObject.name == "Saving Dock" || obj.gameObject.name == "Save Text"){
+				obj.gameObject.SetActive(false);
+			}
+		}
+}
 
 	void DisableAllSwatches(){
 		for(int i = 0; i < colorSwatches.Count; i++){
@@ -168,6 +173,18 @@ public class UserInterface : MonoBehaviour
 							obj.GetChild(i).GetChild(p).gameObject.SetActive(true);
 						}
 					}
+				}
+
+				if(obj.name == "Image Transparency"){
+					for(int i = 0; i < obj.childCount; i++){
+						obj.GetChild(i).gameObject.SetActive(true);
+						for(int p = 0; p < obj.GetChild(i).childCount; p++){
+							obj.GetChild(i).GetChild(p).gameObject.SetActive(true);
+						}
+					}
+
+					ImageTransparency it = GameObject.Find("Image Transparency").GetComponent<ImageTransparency>();
+					it.slider.value = 1.0f;
 				}
 			}
 		} else if (_mode == "Recording"){
@@ -510,9 +527,6 @@ public class UserInterface : MonoBehaviour
 			mic.sprite = micOn;
 			if(Input.touchCount == 0){
 				MicrophoneManager.StopRecording();
-				if(MicrophoneManager.currentTrack >= 1){
-					WAVEFORM.GetComponent<DrawWaveform>().GenerateWaveformImage(FlikittCore.project.getAllAudio()[0]);
-				}
 			}
 		} else {
 			mic.sprite = micOff;
@@ -736,6 +750,7 @@ public class UserInterface : MonoBehaviour
 						}
 
 						if(canProceed2) { if(mode != "Edit") { SetMode("Edit"); } }
+
 						break;
 
 
@@ -865,9 +880,26 @@ public class UserInterface : MonoBehaviour
 
 						break;
 
+					case "Delete Track":
+						if(FlikittCore.project.getAllAudio() != null){
+							DrawWaveform dw = WAVEFORM.GetComponent<DrawWaveform>();
+							MicrophoneManager.deleteAllAudio();
+							FlikittCore.project.removeAllAudio();
+							dw.GenerateWaveformImage(silence);
+							currentTrackCounter.text = 1.ToString();
+							MicrophoneManager.currentTrack = 1;
+						}
+						break;
+
 					case "Save and Quit":
 						if(!FlikittCore.isPlaying){
 							if(FlikittCore.project.checkCompletion()){
+
+								foreach(var obj in Resources.FindObjectsOfTypeAll<Transform>() as Transform[]){
+									if(obj.gameObject.name == "Saving Dock" || obj.gameObject.name == "Save Text"){
+										obj.gameObject.SetActive(true);
+									}
+								}
 
 								//Take a screenshot for thumbnail
 								SetMode("Recording");
@@ -884,9 +916,17 @@ public class UserInterface : MonoBehaviour
 
 						if(!FlikittCore.isPlaying){
 							if(FlikittCore.project.checkCompletion()){
-								SaveLoad.Save(FlikittCore.project.getName());
 								ShareManager.StartRecording();
 							}
+						}
+						break;
+
+					case "Image Transparency Toggle":
+
+
+						if(mode == "Edit"){
+							ImageTransparency it = GameObject.Find("Image Transparency").GetComponent<ImageTransparency>();
+							it.toggleToggle();
 						}
 						break;
 

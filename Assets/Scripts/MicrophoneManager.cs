@@ -127,6 +127,13 @@ public class MicrophoneManager : MonoBehaviour
 		}
 	}
 
+	public void deleteAllAudio(){
+		for(int i = 0; i < gameObject.GetComponents<AudioSource>().Length; i++){
+			Destroy(gameObject.GetComponents<AudioSource>()[i]);
+		}
+		recordings = new List<AudioSource>();
+	}
+
 	public Texture2D PaintWaveformSpectrum(AudioClip audio, float saturation, int width, int height, Color col, Color bgColor) {
 		Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
 		float[] samples = new float[audio.samples];

@@ -19,5 +19,5 @@ MonoBehaviour:
       m_bitrateFactor: 0.5
     m_allowExternalStoragePermission: 1
     m_allowControllingAudio: 1
-    m_prioritiseAppAudioWhenUsingMicrophone: 0
+    m_prioritiseAppAudioWhenUsingMicrophone: 1
     m_androidQSupport: 1

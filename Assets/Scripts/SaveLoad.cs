@@ -36,20 +36,30 @@ public class SaveLoad : MonoBehaviour
 		string find = "Project " + name;
 
 		//Save name
-		if(ES3.KeyExists((name + " name"))) ES3.DeleteKey((name + " name"));	
 		string nm = FlikittCore.project.getName();
 		ES3.Save<string>(name + " name", nm);
 
 		//Save size
-		if(ES3.KeyExists((name + " size"))) ES3.DeleteKey((name + " size"));
 		int size = FlikittCore.project.getAllFrames().Count;
 		ES3.Save<int>(name + " size", size);
 
+		//Save orientations
+		List<string> orientations = new List<string>();
+		foreach(var frame in FlikittCore.project.getAllFrames()){
+			orientations.Add(frame.getOrientation());
+		}
+		ES3.Save<List<string>>(name + " orientations", orientations);
+
+		//Save transparencies
+		List<float> transparencies = new List<float>();
+		foreach(var frame in FlikittCore.project.getAllFrames()){
+			transparencies.Add(frame.getTransparency());
+		}
+		ES3.Save<List<float>>(name + " transparencies", transparencies);
+
 		//Save all images
 		foreach(var frame in FlikittCore.project.getAllFrames()){
-			if(ES3.KeyExists(("Project " + name + " " + frame.getName() + " image.jpg"))) { ES3.DeleteKey(("Project " + name + " " + frame.getName() + " image.jpg")); }
 			Texture2D pic = frame.getPicture() as Texture2D;
-
 			ES3.SaveImage(pic, "Project " + name + " Frame " + frame.getNumber() + " image.jpg");
 		}
 
@@ -80,7 +90,6 @@ public class SaveLoad : MonoBehaviour
 				ES3.Save<List<Vector3>>("Project " + name + " " + frmname + " " + frameT.GetChild(i).gameObject.name + " Points", points);
 			}
 			ES3.Save<List<string>>("Project " + name + " " + frmname + " Line names", lineNames);
-
 		}
 
 		//Save Audio, if there is audio, of course.
@@ -91,7 +100,6 @@ public class SaveLoad : MonoBehaviour
 
 				int counter = 1;
 				foreach(var clip in FlikittCore.project.getAllAudio()){
-					if(ES3.KeyExists("Project " + name + " Track " + counter.ToString())) ES3.DeleteKey("Project " + name + " Track " + counter.ToString());
 					ES3.Save<AudioClip>("Project " + name + " Track " + counter.ToString(), clip);
 					counter++;
 				}
@@ -101,7 +109,6 @@ public class SaveLoad : MonoBehaviour
 		}
 
 		//Save fps
-		if(ES3.KeyExists((name + " fps"))) ES3.DeleteKey((name + " fps"));
 		float fps = FlikittCore.project.getFps();
 		ES3.Save<float>(name + " fps", fps);
 
@@ -109,7 +116,6 @@ public class SaveLoad : MonoBehaviour
 
 	public Project Load(string name){
 		if(ES3.KeyExists(name + " name")){
-
 			//Load size
 			int size = ES3.Load<int>(name + " size");
 
@@ -122,6 +128,8 @@ public class SaveLoad : MonoBehaviour
 
 			//Make frames out of lines
 			List<Frame> frames = new List<Frame>();
+			List<string> orientations = ES3.Load<List<string>>(name + " orientations");
+			List<float> transparencies = ES3.Load<List<float>>(name + " transparencies");
 			for(int i = 1; i <= size; i++){
 				Frame frame = new Frame(i);
 				int childCount = ES3.Load<int>("Project " + name + " Frame " + i + " Child count");
@@ -150,6 +158,8 @@ public class SaveLoad : MonoBehaviour
 
 				frame.setPicture(images[i - 1] as Texture);
 				frame.setHasPicture(true);
+				frame.overrideOrientation(orientations[i - 1]);
+				frame.setTransparency(transparencies[i - 1]);
 
 				frames.Add(frame);
 			}

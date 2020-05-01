@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.IO;
+using B83.Image.BMP;
 
 public class Project : MonoBehaviour {
 	DrawingManager dm;
@@ -197,10 +199,10 @@ public class Frame : MonoBehaviour {
 	private GameObject goSelf;
 	private RawImage imageSelf;
 	private RectTransform rT = null;
-	CameraManager cm;
+	//CameraManager cm;
 
 	public Frame(int _number){
-		cm = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
+		//cm = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
 
 		name = "Frame " + _number;
 		number = _number;
@@ -211,17 +213,11 @@ public class Frame : MonoBehaviour {
 	
 		rT = goSelf.GetComponent<RectTransform>();
 		rT.SetAnchor(AnchorPresets.StretchAll);
-		rT.SetTop((int)((Screen.height-Screen.width) / 2));
-		rT.SetBottom((int)((Screen.height-Screen.width) / 2));
-		rT.SetLeft((int)((Screen.width-Screen.height) / 2));
-		rT.SetRight((int)((Screen.width-Screen.height) / 2));
-
-		rT.localEulerAngles = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
-		orientation = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? "Back Facing" : "Front Facing";
 		rT.localScale = new Vector3(1,1,1);
 
 		goSelf.AddComponent<RawImage>();
 		imageSelf = goSelf.GetComponent<RawImage>();
+		imageSelf.GetComponent<RectTransform>().SetAnchor(AnchorPresets.StretchAll);
 		transparency = 1.0f;
 
 		hasPicture = false;
@@ -229,7 +225,7 @@ public class Frame : MonoBehaviour {
 	}
 
 	public Frame(int _number, RawImage _image){
-		cm = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
+		//cm = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
 
 		name = "Frame " + _number;
 		number = _number;
@@ -240,17 +236,11 @@ public class Frame : MonoBehaviour {
 	
 		rT = goSelf.GetComponent<RectTransform>();
 		rT.SetAnchor(AnchorPresets.StretchAll);
-		rT.SetTop((int)((Screen.height-Screen.width) / 2));
-		rT.SetBottom((int)((Screen.height-Screen.width) / 2));
-		rT.SetLeft((int)((Screen.width-Screen.height) / 2));
-		rT.SetRight((int)((Screen.width-Screen.height) / 2));
-
-		rT.localEulerAngles = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
 		rT.localScale = new Vector3(1,1,1);
 
 		goSelf.AddComponent<RawImage>();
 		imageSelf = goSelf.GetComponent<RawImage>();
-		imageSelf = _image;
+		imageSelf.GetComponent<RectTransform>().SetAnchor(AnchorPresets.StretchAll);
 		transparency = 1.0f;
 
 		hasPicture = false;
@@ -316,14 +306,6 @@ public class Frame : MonoBehaviour {
 			return;
 		}
 	}
-	public void setOrientation() {
-		rT.localEulerAngles = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
-		orientation = (cm.getWebTex().deviceName == WebCamTexture.devices[0].name) ? "Back Facing" : "Front Facing";
-	}
-	public void overrideOrientation(string ori){
-		rT.localEulerAngles = (ori == "Back Facing") ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
-		orientation = (ori == "Back Facing") ? "Back Facing" : "Front Facing";
-	}
 	public GameObject getGOSelf() {return goSelf;}
 }
 
@@ -331,7 +313,7 @@ public class FlikittCore : MonoBehaviour
 {
 	public Project project;
 	public GameObject linePrefab;
-	CameraManager CameraManager;
+	//CameraManager CameraManager;
 	MicrophoneManager MicrophoneManager;
 	SaveLoad SaveLoad;
 	ShareManager ShareManager;
@@ -344,8 +326,8 @@ public class FlikittCore : MonoBehaviour
 	private string workBoard;
 	private List<string> existingProjects = new List<string>();
 
-	void Start(){
-		CameraManager = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
+	void Awake(){
+		//CameraManager = GameObject.Find("Camera Manager").GetComponent<CameraManager>();
 		MicrophoneManager = GameObject.Find("Microphone Manager").GetComponent<MicrophoneManager>();
 		SaveLoad = GameObject.Find("Easy Save 3 Manager").GetComponent<SaveLoad>();
 		ShareManager = GameObject.Find("Share Manager").GetComponent<ShareManager>();
@@ -370,11 +352,49 @@ public class FlikittCore : MonoBehaviour
 			string name = workBoard;
 			string type = "Frame-by-Frame";
 			project = new Project(name, type, linePrefab);
-			NewPage();
+
+			int fps = ES3.Load<int>("FPS");
+			project.setFps(fps);
+
+			int numFrames = ES3.Load<int>("Frame Amount");
+			for(int i = 0; i < numFrames; i++){
+				NewPage();
+
+			}
+			foreach(Frame frame in project.getAllFrames()){
+				Texture2D tex = LoadTexture(Application.persistentDataPath + "/UnprocessedFrames/frame" + frame.getNumber() + ".bmp");
+				Texture tex2 = tex as Texture;
+				frame.setPicture(tex2);
+				frame.setHasPicture(true);
+			}
+
+			DirectoryInfo dataDir = new DirectoryInfo(Application.persistentDataPath + "/UnprocessedFrames");
+ 			dataDir.Delete(true);
+
 			spf = 1 / project.getFps();
+
+			LoadPage(1);
 
 			drawMode = "Pencil";
 		}
+	}
+
+	public static Texture2D LoadTexture(string filePath)
+	{
+    	Texture2D tex = null;
+
+   		if (File.Exists(filePath))
+    {
+	        BMPLoader bmpLoader = new BMPLoader();
+	        bmpLoader.ForceAlphaReadWhenPossible = true; //Uncomment to read alpha too
+
+	        //Load the BMP data
+	        BMPImage bmpImg = bmpLoader.LoadBMP(filePath);
+
+	        //Convert the Color32 array into a Texture2D
+	        tex = bmpImg.ToTexture2D();
+	    }
+	    return tex;
 	}
 
 	public bool checkExistance(string name){
@@ -528,38 +548,5 @@ public class FlikittCore : MonoBehaviour
 		ShareManager.StopRecording();
 		LoadPage(1);
 		yield break;
-	}
-
-
-	private IEnumerator contShotCoroutine;
-	public void StartShot(){
-		contShotCoroutine = Shoot();
-		StartCoroutine(contShotCoroutine);
-	}
-
-	private IEnumerator Shoot(){
-		//This seems to crash whenever I hold down the button for too long.
-		//It took about 14.13 s <------ (Half way)
-		if(isShooting){
-
-			CameraManager.Capture();
-
-			if(project.getAllFrames().Count >= currentFrame + 1){
-				if(project.getFrame(currentFrame).getHasPicture()){
-					CameraManager.DeleteSpecificCapture(currentFrame);
-					LoadPage(currentFrame + 1);
-				} else {
-					LoadPage(currentFrame + 1);
-				}
-			} else {
-				NewPage();
-			}
-
-			yield return new WaitForSeconds(spf);
-
-			StartShot();
-		} else {
-			yield break;
-		}
 	}
 }

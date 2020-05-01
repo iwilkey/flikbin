@@ -1,7 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using VoxelBusters.ReplayKit;
+
+#if PLATFORM_IOS || UNITY_EDITOR
+using UnityEngine.iOS;
+using UnityEngine.Apple.ReplayKit;
 
 public class ShareManager : MonoBehaviour
 {
@@ -12,79 +15,31 @@ public class ShareManager : MonoBehaviour
 	void Start(){
 		ui = GameObject.Find("User Interface").GetComponent<UserInterface>();
 		fc = GameObject.Find("Flikitt Core").GetComponent<FlikittCore>();
-		init();
-	}
-
-	public bool init(){
-		bool isRecordingAPIAvailable = ReplayKitManager.IsRecordingAPIAvailable();
-		string message = isRecordingAPIAvailable ? "API Available on this mobile device!" : "API is NOT available on this mobile device.";
-		Debug.Log(message);
-
-		if(isRecordingAPIAvailable){
-			ReplayKitManager.Initialise();
-		}
-
-		return isRecordingAPIAvailable;
-	}
-
-	void OnEnable()
-	{
-    	ReplayKitManager.DidInitialise += DidInitialise;
-	}
-	void OnDisable()
-	{
-	    ReplayKitManager.DidInitialise -= DidInitialise;
-	}
-
-	private  void  DidInitialise(ReplayKitInitialisationState  state,  string  message)  
-	{  
-	    Debug.Log("Received Event Callback : DidInitialise [State:"  +  state.ToString()  +  " "  +  "Message:"  +  message);  
-
-	    switch  (state)  
-	    {  
-	        case  ReplayKitInitialisationState.Success:  
-	            Debug.Log("ReplayKitManager.DidInitialise : Initialisation Success");  
-	            break;  
-	        case  ReplayKitInitialisationState.Failed:  
-	            Debug.Log("ReplayKitManager.DidInitialise : Initialisation Failed with message["+message+"]");  
-	            break;  
-	        default:  
-	            Debug.Log("Unknown State");  
-	            break;  
-	    }  
 	}
 
 	public void StartRecording(){
-		if(!ReplayKitManager.IsRecording()){
-			if(ReplayKitManager.IsPreviewAvailable()){
-				ReplayKitManager.Discard();
-			}
 
-			ui.SetMode("Recording");
-			fc.StartRecPlay();
+		ui.SetMode("Recording");
+		fc.StartRecPlay();
+		isRecording = true;
 
-			#if PLATFORM_ANDROID
-				ReplayKitManager.StartRecording(true);
-			#else
-				ReplayKitManager.StartRecording(false);
-			#endif
-
-			isRecording = true;
+		if(ReplayKit.APIAvailable){	
+			ReplayKit.StartRecording(false, false);
 		}
 	}
 
 	public void StopRecording(){
-		if(ReplayKitManager.IsRecording()){
-			isRecording = false;
-			ReplayKitManager.StopRecording();
-			ReplayKitManager.Preview();
-
-			ReplayKitManager.SavePreview((error) =>
-	        {
-	            Debug.Log("Saved preview to gallery with error : " + ((error == null) ? "null" : error));
-	        });
-	        
-			ui.SetMode("Edit");
+		if(ReplayKit.APIAvailable){
+			if(ReplayKit.isRecording){
+				isRecording = false;
+				ReplayKit.StopRecording();
+				ReplayKit.Preview();
+			}
 		}
+
+		isRecording = false;
+		ui.SetMode("Edit");
 	}
 }
+
+#endif

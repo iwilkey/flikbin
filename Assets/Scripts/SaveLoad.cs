@@ -128,7 +128,7 @@ public class SaveLoad : MonoBehaviour
 
 			//Make frames out of lines
 			List<Frame> frames = new List<Frame>();
-			List<string> orientations = ES3.Load<List<string>>(name + " orientations");
+			//List<string> orientations = ES3.Load<List<string>>(name + " orientations");
 			List<float> transparencies = ES3.Load<List<float>>(name + " transparencies");
 			for(int i = 1; i <= size; i++){
 				Frame frame = new Frame(i);
@@ -158,7 +158,7 @@ public class SaveLoad : MonoBehaviour
 
 				frame.setPicture(images[i - 1] as Texture);
 				frame.setHasPicture(true);
-				frame.overrideOrientation(orientations[i - 1]);
+				//frame.overrideOrientation(orientations[i - 1]);
 				frame.setTransparency(transparencies[i - 1]);
 
 				frames.Add(frame);

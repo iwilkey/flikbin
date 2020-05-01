@@ -4,6 +4,8 @@ using UnityEngine;
 
 #if PLATFORM_ANDROID
 using UnityEngine.Android;
+#else
+using UnityEngine.iOS;
 #endif
 
 public class MicrophoneManager : MonoBehaviour
@@ -20,9 +22,7 @@ public class MicrophoneManager : MonoBehaviour
 		//Android Permissions, and grabbing the phone microphone
 		#if PLATFORM_ANDROID
 		if(!Permission.HasUserAuthorizedPermission(Permission.Microphone)){
-			do {
-				Permission.RequestUserPermission(Permission.Microphone);
-			} while (!Permission.HasUserAuthorizedPermission(Permission.Microphone));
+			Permission.RequestUserPermission(Permission.Microphone);
 		}
 
 		if(Microphone.devices != null){
@@ -32,7 +32,14 @@ public class MicrophoneManager : MonoBehaviour
 		hasRecording = false;
 		StartLoadMakeAudio();
 
+		#else
+
+		currentTrack = 1;
+		hasRecording = false;
+		StartLoadMakeAudio();
+
 		#endif
+
 	}
 
 	private IEnumerator audioLoad;
@@ -70,6 +77,11 @@ public class MicrophoneManager : MonoBehaviour
 	}
 
 	public void StartRecordingOverdub(){
+
+		if(Microphone.devices != null){
+			microphone = Microphone.devices[0];
+		}
+		
 		currentTrack = recordings.Count + 1;
 		AudioSource currentAudio = this.gameObject.AddComponent<AudioSource>();
 		recordings.Add(currentAudio);
@@ -112,6 +124,10 @@ public class MicrophoneManager : MonoBehaviour
 		recordings.Add(currentAudio);
 		currentAudio.mute = true;
 		currentlyRecording = true;
+
+		if(Microphone.devices != null){
+			microphone = Microphone.devices[0];
+		}
 		
 		int time = (int)(Mathf.Round((1 / FlikittCore.project.getFps()) * FlikittCore.project.getAllFrames().Count)) + 1;
 		recordings[currentTrack - 1].clip = null;

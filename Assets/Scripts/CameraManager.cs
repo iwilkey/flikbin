@@ -6,6 +6,8 @@ using UnityEngine.UI;
 
 #if PLATFORM_ANDROID
 using UnityEngine.Android;
+#else
+using UnityEngine.iOS;
 #endif
 
 public class CameraManager : MonoBehaviour
@@ -45,8 +47,36 @@ public class CameraManager : MonoBehaviour
  	
 			if(webTex != null) webTex.Play();
 		}
-		#endif
+		#else
 		//ANDROID ENDS HERE
+
+		if (!(Application.HasUserAuthorization(UserAuthorization.WebCam))){
+			do {
+				Application.RequestUserAuthorization(UserAuthorization.WebCam);
+			} while (!(Application.HasUserAuthorization(UserAuthorization.WebCam)));
+		}
+
+		if(WebCamTexture.devices != null){
+			camName = WebCamTexture.devices[0].name;
+			webTex = new WebCamTexture(camName, Screen.width, Screen.height);
+	
+			camRender.texture = webTex;
+			camRender.material.mainTexture = webTex;
+			camRender.rectTransform.SetTop((int)((Screen.height-Screen.width) / 2));
+			camRender.rectTransform.SetBottom((int)((Screen.height-Screen.width) / 2));
+			camRender.rectTransform.SetLeft((int)((Screen.width-Screen.height) / 2));
+			camRender.rectTransform.SetRight((int)((Screen.width-Screen.height) / 2));
+
+
+				//For back facing camera.
+			camRender.rectTransform.localEulerAngles = new Vector3(0,0,-90);
+				//For Front Facing Camera.
+			//camRender.rectTransform.localEulerAngles = new Vector3(0,180,-270);
+ 	
+			if(webTex != null) webTex.Play();
+		}
+
+		#endif
 
 	}
 
@@ -58,15 +88,6 @@ public class CameraManager : MonoBehaviour
 				if(webTex.isPlaying) webTex.Stop();
 			}
 		}
-	}
-
-	public void Capture(){
-		webTex.Pause();
-		Texture2D picTex = new Texture2D(camRender.texture.width, camRender.texture.height, TextureFormat.ARGB32, false);
-		picTex.SetPixels(webTex.GetPixels());
-		picTex.Apply();
-		FlikittCore.getCurrentFrame().setHasPicture(true);
-		FlikittCore.getCurrentFrame().setPicture(picTex);
 	}
 
 	public void DeleteCapture(){
@@ -93,7 +114,7 @@ public class CameraManager : MonoBehaviour
 			webTex.Stop();
 			webTex.deviceName = (webTex.deviceName == WebCamTexture.devices[0].name) ? WebCamTexture.devices[1].name : WebCamTexture.devices[0].name;
 			camRender.rectTransform.localEulerAngles = (webTex.deviceName == WebCamTexture.devices[0].name) ? new Vector3(0,0,-90) : new Vector3(0,180,-270);
-			FlikittCore.getCurrentFrame().setOrientation();
+			//FlikittCore.getCurrentFrame().setOrientation();
 			webTex.Play();
 		} else {
 			Debug.Log("No cameras found!");

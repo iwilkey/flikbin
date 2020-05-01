@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System;
 
 public class SplashScreen : MonoBehaviour
 {
-    public Image pencil, next, prev;
+    public Image next, prev;
    	public RawImage thumbnail;
-    public Text projectName;
+    public Text projectName, instructions, dateTime;
     private Vector3 sp;
     private RectTransform pencilT;
-    public Texture newProjectThumb;
-    private float time, t = 0, z = 0, t2 = 0, t3 = 0;
+    private float time, t = 0, z = 0, t2 = 0, t3 = 0, rot = 0;
    	public bool switchThumbnail = false, loading = false;
 
    	private int counter = 0;
@@ -23,11 +23,16 @@ public class SplashScreen : MonoBehaviour
    	public BoxCollider2D edit;
 
     void Start(){
+    	if (!(Application.HasUserAuthorization(UserAuthorization.WebCam))){
+			Application.RequestUserAuthorization(UserAuthorization.WebCam);
+		}
+
     	time = 0;
     	t = 0;
     	z = 0;
     	t2 = 0;
     	t3 = 0;
+    	rot = 0;
     	switchThumbnail = false;
     	counter = 0;
 
@@ -36,9 +41,7 @@ public class SplashScreen : MonoBehaviour
     	next.color = new Color(next.color.r, next.color.g, next.color.b, t3);
     	prev.color = new Color(prev.color.r, prev.color.g, prev.color.b, t3);
     	projectName.color = new Color(projectName.color.r, projectName.color.g, projectName.color.b, t3);
-    	pencil.color = new Color(pencil.color.r, pencil.color.g, pencil.color.b, t3);
     	thumbnail.color = new Color(thumbnail.color.r, thumbnail.color.g, thumbnail.color.b, t3);
-    	thumbnail.texture = newProjectThumb;
 
     	if(!ES3.KeyExists("Existing Projects")){
 			existingProjects = new List<string>();
@@ -62,9 +65,19 @@ public class SplashScreen : MonoBehaviour
     void Update(){
     	if(!loading){
 
+    		dateTime.text = System.DateTime.Now.ToString();
+
 	    	counter = counter % existingProjects.Count;
 
-	    	time += Time.deltaTime;
+	    	time += Time.deltaTime * 2.5f;
+	    	rot += Time.deltaTime;
+	    	thumbnail.GetComponent<RectTransform>().localEulerAngles = new Vector3(0,0,rot);
+
+	    	if(currentProject == "New Project"){
+	    		instructions.text = "Tap here to create a project!";
+	    	} else {
+	    		instructions.text = "Tap here to continue editing";
+	    	}
 
 	    	if(time >= 0.0f && time <= 1.0f){
 	    		switchThumbnail = true;
@@ -75,7 +88,6 @@ public class SplashScreen : MonoBehaviour
 	    		next.color = new Color(next.color.r, next.color.g, next.color.b, t3);
 	    		prev.color = new Color(prev.color.r, prev.color.g, prev.color.b, t3);
 	    		projectName.color = new Color(projectName.color.r, projectName.color.g, projectName.color.b, t3);
-	    		pencil.color = new Color(pencil.color.r, pencil.color.g, pencil.color.b, t3);
 	    		thumbnail.color = new Color(thumbnail.color.r, thumbnail.color.g, thumbnail.color.b, t3);
 
 	    	} else if(time > 1.0f) {
@@ -85,7 +97,7 @@ public class SplashScreen : MonoBehaviour
 		    		prev.color = new Color(prev.color.r, prev.color.g, prev.color.b, 1.0f);
 		    	}
 
-		    	if(counter + 1 > existingProjects.Count){
+		    	if(existingProjects[(counter + 1) % existingProjects.Count] == "New Project"){
 		    		next.color = new Color(next.color.r, next.color.g, next.color.b, 0.1f);
 		    	} else {
 		    		next.color = new Color(next.color.r, next.color.g, next.color.b, 1.0f);
@@ -103,11 +115,10 @@ public class SplashScreen : MonoBehaviour
 	    }
 
     	if(loading){
-    		t3 -= 0.01f;	
+    		t3 -= 0.1f;	
     		next.color = new Color(next.color.r, next.color.g, next.color.b, t3);
     		prev.color = new Color(prev.color.r, prev.color.g, prev.color.b, t3);
     		projectName.color = new Color(projectName.color.r, projectName.color.g, projectName.color.b, t3);
-    		pencil.color = new Color(pencil.color.r, pencil.color.g, pencil.color.b, t3);
     		thumbnail.color = new Color(thumbnail.color.r, thumbnail.color.g, thumbnail.color.b, t3);
 
     		if(t3 <= 0.0f){
@@ -130,7 +141,9 @@ public class SplashScreen : MonoBehaviour
 					case "Next":
 
 						if(!(counter + 1 > existingProjects.Count)){
-							Next();
+							if(existingProjects[(counter + 1) % existingProjects.Count] != "New Project"){
+								Next();
+							}
 						}
 						break;
 
@@ -166,13 +179,6 @@ public class SplashScreen : MonoBehaviour
 		currentProject = existingProjects[counter];
 		projectName.color = new Color(projectName.color.r, projectName.color.g, projectName.color.b, 1.0f);
 		projectName.text = existingProjects[counter];
-		if(currentProject != "New Project"){
-			var texture = ES3.LoadImage("Project " + currentProject + " thumbnail.jpg");
-			thumbnail.texture = texture;
-		} else {
-			thumbnail.texture = newProjectThumb;
-		}
-
 
 		t2 = 0;
 		switchThumbnail = true;
@@ -187,12 +193,6 @@ public class SplashScreen : MonoBehaviour
 		currentProject = existingProjects[counter];
 		projectName.color = new Color(projectName.color.r, projectName.color.g, projectName.color.b, 1.0f);
 		projectName.text = existingProjects[counter];
-		if(currentProject != "New Project"){
-			var texture = ES3.LoadImage("Project " + currentProject + " thumbnail.jpg");
-			thumbnail.texture = texture;
-		} else {
-			thumbnail.texture = newProjectThumb;
-		}
 
 		t2 = 0;
 		switchThumbnail = true;
